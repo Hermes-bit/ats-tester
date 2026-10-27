@@ -193,7 +193,7 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 2
 /* Prompt IA */
 #results, #ai-card { scroll-margin-top: 90px; }
 .ai-options { display: flex; gap: 10px 20px; align-items: flex-end; flex-wrap: wrap; margin: 14px 0 12px; }
-.ai-options .field { flex: 0 1 260px; }
+.ai-options .field { flex: 0 1 300px; }
 .check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; padding: 9px 0; }
 .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--navy); }
 .ai-prompt { min-height: 280px; background: var(--surface-2); font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -201,6 +201,8 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 2
 .ai-links a { font-weight: 650; }
 .ai-msg { margin: 10px 0 0; min-height: 1.2em; }
 .ai-msg:empty { display: none; }
+.ai-steps { margin: 14px 0 0; padding-left: 22px; display: grid; gap: 4px; font-size: 14px; }
+.ai-steps li::marker { color: var(--gold); font-weight: 700; }
 
 /* Historique */
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }

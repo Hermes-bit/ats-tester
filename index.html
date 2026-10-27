@@ -179,8 +179,15 @@
             <h2 class="card-title">Perfectionner avec ton IA</h2>
             <span class="muted small" id="ai-size"></span>
           </div>
-          <p class="muted small">Ce prompt reprend la fiche de poste, tes documents et les résultats ci-dessus. Colle-le dans ton IA (ChatGPT, Claude, Gemini, Le Chat, Copilot…) : elle réécrira ton CV et ta lettre sans rien inventer, puis te posera des questions sur les compétences manquantes.</p>
+          <p class="muted small">Ce prompt reprend la fiche de poste, tes documents et les résultats ci-dessus. Colle-le dans ton IA (ChatGPT, Claude, Gemini, Le Chat, Copilot…) : elle n'inventera aucune compétence et te posera des questions sur celles qui manquent.</p>
           <div class="ai-options">
+            <label class="field">
+              <span>Type de modifications</span>
+              <select id="ai-mode">
+                <option value="edit">Retouches, en gardant ma mise en page</option>
+                <option value="rewrite">Réécriture complète</option>
+              </select>
+            </label>
             <label class="field">
               <span>À perfectionner</span>
               <select id="ai-target"></select>
@@ -199,7 +206,8 @@
             </span>
           </div>
           <p class="ok-msg ai-msg" id="ai-msg" role="status"></p>
-          <p class="hint">Le prompt contient le texte de tes documents : relis-le avant de le partager. Ensuite, réponds aux questions de l'IA, vérifie chaque phrase proposée, reporte les corrections dans ton CV et relance l'analyse ici pour mesurer le progrès.</p>
+          <ol class="ai-steps" id="ai-steps"></ol>
+          <p class="hint">Le prompt contient le texte de tes documents : relis-le avant de le partager.</p>
         </article>
 
         <article class="card save-card">

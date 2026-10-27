@@ -20,7 +20,11 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 - **Vérifications de la lettre** : nom de l'entreprise, intitulé du poste, longueur, formule d'appel, formule de politesse, objet.
 - **Scores** pour le CV, la lettre et un indice global, avec des **recommandations** classées par priorité.
 - **« Ce que voit l'ATS »** : le texte brut extrait, dans l'ordre de lecture, avec les mots-clés trouvés surlignés.
-- **Prompt pour ton IA générative** : un prompt prêt à copier dans ChatGPT, Claude, Gemini, Le Chat ou Copilot. Il reprend la fiche de poste, tes documents, les scores, les mots-clés manquants et les problèmes détectés. L'IA réécrit ton CV et ta lettre sans rien inventer, puis te pose des questions sur les compétences qui manquent. Une option masque ton e-mail et ton téléphone avant le partage.
+- **Prompt pour ton IA générative** : un prompt prêt à copier dans ChatGPT, Claude, Gemini, Le Chat ou Copilot. Il reprend la fiche de poste, tes documents, les scores, les mots-clés manquants et les problèmes détectés. Deux modes :
+  - **Retouches, en gardant ma mise en page** (par défaut) : l'IA propose des remplacements de texte précis (emplacement, texte actuel, nouveau texte), de même longueur, à reporter dans ton fichier d'origine. La charte graphique de ton CV et de ta lettre reste intacte.
+  - **Réécriture complète** : l'IA réécrit le CV et la lettre en texte structuré.
+
+  Dans les deux cas, l'IA n'invente rien et te pose des questions sur les compétences qui manquent. Une option masque ton e-mail et ton téléphone avant le partage.
 - **Suivi des candidatures** : sauvegarde de chaque candidature (entreprise, poste, date, statut, notes, scores, fiche de poste et textes envoyés), recherche, filtres par statut et statistiques.
 - **Export / import JSON** pour sauvegarder tes candidatures ou les transférer sur un autre ordinateur.
 - **Confidentialité** : tout est traité **dans le navigateur**. Aucun fichier n'est envoyé sur un serveur.

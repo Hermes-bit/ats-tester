@@ -258,15 +258,30 @@
     sel.innerHTML = keys.map((k) => '<option value="' + k + '">' + AI_TARGETS[k] + "</option>").join("");
     sel.value = keys.includes(prev) ? prev : keys[0];
     sel.disabled = keys.length < 2;
+    const mode = $("#ai-mode").value;
     const prompt = ATS.buildPrompt(r, {
       title: $("#title").value, company: $("#company").value, url: $("#url").value, jdText: ctx.jdText,
       cvText: ctx.cv ? ctx.cv.text : "", letterText: ctx.letter ? ctx.letter.text : "",
-      target: sel.value, maskContacts: $("#ai-mask").checked,
+      cvMeta: ctx.cv ? ctx.cv.meta : null, letterMeta: ctx.letter ? ctx.letter.meta : null,
+      target: sel.value, mode, maskContacts: $("#ai-mask").checked,
     });
     $("#ai-prompt").value = prompt;
     $("#ai-size").textContent = prompt.length.toLocaleString("fr-FR") + " caractères";
     $("#ai-msg").textContent = "";
+    const docs = ctx.cv && ctx.letter ? "ton CV et ta lettre" : ctx.cv ? "ton CV" : "ta lettre";
+    $("#ai-steps").innerHTML = (mode === "edit" ? [
+      "Copie le prompt, ouvre ton IA et <b>joins-lui aussi " + docs + " en PDF</b> : elle verra ta mise en page et la place disponible.",
+      "Réponds à ses questions sur les compétences manquantes.",
+      "Applique ses modifications dans ton <b>fichier d'origine</b> (Word, Canva, Google Docs…) avec Ctrl+F pour retrouver chaque passage, puis réexporte en PDF. Si tu n'as que le PDF, ouvre-le dans Word (Fichier &gt; Ouvrir) et vérifie la mise en page.",
+      "Réimporte ton nouveau PDF ici et relance l'analyse pour mesurer le progrès.",
+    ] : [
+      "Copie le prompt et colle-le dans ton IA.",
+      "Réponds à ses questions sur les compétences manquantes.",
+      "Vérifie chaque phrase proposée, puis colle le nouveau texte dans un modèle de CV simple (une colonne) et exporte en PDF.",
+      "Réimporte ton nouveau CV ici et relance l'analyse pour mesurer le progrès.",
+    ]).map((s) => "<li>" + s + "</li>").join("");
   }
+  $("#ai-mode").addEventListener("change", renderPrompt);
   $("#ai-target").addEventListener("change", renderPrompt);
   $("#ai-mask").addEventListener("change", renderPrompt);
   $("#go-ai").addEventListener("click", () => $("#ai-card").scrollIntoView({ behavior: "smooth", block: "start" }));
