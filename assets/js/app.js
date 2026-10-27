@@ -21,6 +21,7 @@
     $("#view-analyze").hidden = v !== "analyze";
     $("#view-history").hidden = v !== "history";
     if (v === "history") renderHistory();
+    history.replaceState(null, "", v === "history" ? "#candidatures" : location.pathname);
     window.scrollTo({ top: 0 });
   }
   $$(".tab").forEach((t) => t.addEventListener("click", () => showView(t.dataset.view)));
@@ -42,7 +43,6 @@
       if (!text.trim()) throw new Error("Aucun texte trouvé dans ce fichier (document scanné ?).");
       jd.value = text;
       setJdStatus("✓ Texte importé depuis « " + esc(file.name) + " ». Tu peux le corriger ci-dessus.");
-      saveDraft();
     } catch (e) { setJdStatus("✗ " + esc(e.message), "error"); }
   }
   $("#jd-file").accept = ATS.ACCEPT;
@@ -135,12 +135,6 @@
     return state.docs[kind];
   }
 
-  /* ---------- Brouillon ---------- */
-  function saveDraft() { ATS.store.saveDraft({ company: $("#company").value, title: $("#title").value, url: $("#url").value, jd: jd.value }); }
-  ["#company", "#title", "#url", "#jd"].forEach((s) => $(s).addEventListener("input", saveDraft));
-  const draft = ATS.store.loadDraft();
-  if (draft) { $("#company").value = draft.company || ""; $("#title").value = draft.title || ""; $("#url").value = draft.url || ""; jd.value = draft.jd || ""; }
-
   /* ---------- Analyse ---------- */
   $("#btn-analyze").addEventListener("click", async () => {
     const btn = $("#btn-analyze");
@@ -164,13 +158,17 @@
     renderResults(result, { jdText, cv, letter });
     $("#results").hidden = false;
     if (scroll) $("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+    if (scroll && result.global >= 75 && ATS.fx) setTimeout(() => ATS.fx.confetti(), 500);
   }
 
   function tone(score) { return score === null || score === undefined ? "none" : ATS.verdict(score).tone; }
   function setRing(el, score) {
     el.style.setProperty("--v", score === null ? 0 : score);
     el.dataset.tone = tone(score);
-    el.querySelector("span").textContent = score === null ? "—" : score;
+    const span = el.querySelector("span");
+    if (score === null) span.textContent = "—";
+    else if (ATS.fx) ATS.fx.countUp(span, score, 900);
+    else span.textContent = score;
   }
 
   function renderResults(r, ctx) {
@@ -178,7 +176,7 @@
     setRing($("#ring-cv"), r.cv ? r.cv.score : null);
     setRing($("#ring-letter"), r.letter ? r.letter.score : null);
     const v = ATS.verdict(r.global);
-    const vEl = $("#verdict"); vEl.textContent = v.label; vEl.className = "verdict " + v.tone;
+    const vEl = $("#verdict"); vEl.textContent = v.label + " " + ({ good: "🚀", mid: "💪", bad: "🛠️" }[v.tone] || ""); vEl.className = "verdict " + v.tone;
     const nSkills = r.keywords.skills.length + r.keywords.others.length;
     const cvFound = r.cv ? r.cv.coverage.filter((c) => c.found).length : 0;
     const cvTot = r.cv ? r.cv.coverage.length : 0;
@@ -447,7 +445,6 @@
     state.ignored = new Set(a.ignored || []);
     state.editingId = a.id;
     statusSel.value = a.status; $("#save-date").value = a.appliedAt || ""; $("#save-notes").value = a.notes || "";
-    saveDraft();
     dlg.close();
     showView("analyze");
     runAnalysis(true);
@@ -486,20 +483,22 @@
     });
     state.result = null; state.ignored = new Set(); state.editingId = null;
     $("#results").hidden = true; $("#analyze-error").textContent = ""; $("#save-date").value = ""; statusSel.value = "Envoyée";
-    ATS.store.clearDraft();
   }
   $("#btn-reset").addEventListener("click", () => resetForm(false));
   // Nouvelle offre : garde le CV (souvent le même d'une candidature à l'autre), efface le reste
   function newOffer() {
     resetForm(true);
-    $("#analyser").scrollIntoView({ behavior: "smooth", block: "start" });
+    $("#form-top").scrollIntoView({ behavior: "smooth", block: "start" });
     $("#company").focus({ preventScroll: true });
   }
   $("#btn-new-offer").addEventListener("click", newOffer);
   $("#btn-next-offer").addEventListener("click", newOffer);
 
   /* ---------- Démarrage ---------- */
+  resetForm(false);
+  window.addEventListener("pageshow", (e) => { if (e.persisted) resetForm(false); });
   if (!ATS.store.isAvailable()) $("#storage-warning").hidden = false;
+  if (location.hash === "#candidatures") showView("history");
   $("#year").textContent = new Date().getFullYear();
   updateCount();
 })();

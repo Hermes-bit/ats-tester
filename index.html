@@ -3,464 +3,244 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ATS Tester – CV et lettre de motivation</title>
-  <meta name="description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS), et suis tes candidatures.">
-  <meta name="theme-color" content="#060B0D">
+  <title>ATS Tester – passe le filtre des recruteurs avant d'envoyer</title>
+  <meta name="description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS). Gratuit, sans inscription, et tout reste dans ton navigateur.">
+  <meta name="theme-color" content="#07060F">
   <meta property="og:type" content="website">
   <meta property="og:title" content="ATS Tester – passe le filtre des recruteurs avant d'envoyer">
   <meta property="og:description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS). Gratuit, et tout reste dans ton navigateur.">
   <meta property="og:image" content="https://hermes-bit.github.io/ats-tester/assets/img/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="icon" href="assets/img/favicon.svg?v=8" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=8">
   <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/vendor/fonts/cormorant-garamond-latin-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/img/hermes-barry.webp" as="image" type="image/webp">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=8">
 </head>
-<body>
+<body class="page-home">
+  <div class="bg-fx" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
   <header class="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="#top" data-goto="top" aria-label="ATS Tester, retour en haut">
-        <img class="brand-mark" src="assets/img/logo.svg" width="42" height="42" alt="">
+      <a class="brand" href="#top" aria-label="ATS Tester, retour en haut">
+        <img class="brand-mark" src="assets/img/logo.svg?v=8" width="42" height="42" alt="">
         <div>
           <div class="brand-name">ATS Tester</div>
           <div class="brand-tag">Le messager de ta candidature</div>
         </div>
       </a>
       <nav class="nav" aria-label="Navigation principale">
-        <a class="nav-link nav-anchor" href="#fonctionnalites" data-goto="fonctionnalites">Fonctionnalités</a>
-        <a class="nav-link nav-anchor" href="#methode" data-goto="methode">Méthode</a>
-        <button class="nav-link tab" data-view="history" aria-selected="false">Mes candidatures <span class="badge" id="history-count">0</span></button>
-        <a class="btn btn-neon btn-small" href="#analyser" data-goto="analyser">Tester mon CV <span class="arrow" aria-hidden="true">↗</span></a>
+        <a class="nav-link nav-anchor" href="#fonctionnalites">Fonctionnalités</a>
+        <a class="nav-link nav-anchor" href="#demo">Démo</a>
+        <a class="nav-link nav-anchor" href="#methode">Méthode</a>
+        <a class="nav-link nav-anchor" href="analyser.html#candidatures">Mes candidatures</a>
+        <a class="btn btn-neon btn-small" href="analyser.html">Tester mon CV <span class="arrow" aria-hidden="true">↗</span></a>
       </nav>
     </div>
   </header>
 
   <main class="wrap">
-    <!-- ================= ANALYSER ================= -->
-    <section id="view-analyze" class="view">
-
-      <!-- Accroche publicitaire -->
-      <section class="hero" id="top">
-        <div class="hero-text">
-          <div class="kicker">Créé par Hermès BARRY · géomaticien</div>
-          <h1>Passe le filtre<br>des recruteurs<br><span class="grad-text">avant d'envoyer</span></h1>
-          <p class="lead">ATS Tester lit ton CV et ta lettre comme un logiciel de recrutement : mots-clés de l'offre, lisibilité, structure. Puis il te prépare un prompt pour les perfectionner avec ton IA, sans toucher à ta mise en page.</p>
-          <div class="hero-cta">
-            <a class="btn btn-neon btn-large" href="#analyser" data-goto="analyser">Tester mon CV gratuitement <span class="arrow" aria-hidden="true">↗</span></a>
-            <a class="btn btn-ghost btn-large" href="#methode" data-goto="methode">Comment ça marche</a>
-          </div>
-          <ul class="trust">
-            <li>Gratuit</li>
-            <li>Sans inscription</li>
-            <li>Aucun fichier envoyé</li>
-          </ul>
+    <!-- Accroche -->
+    <section class="hero" id="top">
+      <div class="hero-text reveal">
+        <div class="kicker">Créé par Hermès BARRY · géomaticien</div>
+        <h1>Passe le filtre<br>des recruteurs<br><span class="grad-text shimmer">avant d'envoyer</span></h1>
+        <p class="lead">ATS Tester lit ton CV et ta lettre comme un logiciel de recrutement : mots-clés de l'offre, lisibilité, structure. Puis il te prépare un prompt pour les perfectionner avec ton IA, sans toucher à ta mise en page.</p>
+        <div class="hero-cta">
+          <a class="btn btn-neon btn-large" href="analyser.html">Tester mon CV gratuitement <span class="arrow" aria-hidden="true">↗</span></a>
+          <a class="btn btn-ghost btn-large" href="#demo">Voir la démo ✨</a>
         </div>
-        <div class="hero-visual">
-          <div class="halo" aria-hidden="true"><span></span><span></span><span></span></div>
-          <img class="portrait" src="assets/img/hermes-barry.webp" width="900" height="675" alt="Portrait d'Hermès BARRY, créateur d'ATS Tester">
-          <div class="float-chip chip-score" aria-hidden="true">
-            <div class="chip-ring"><span>80</span></div>
-            <div><b>Indice ATS</b><small>Exemple d'analyse</small></div>
-          </div>
-          <div class="float-chip chip-ai" aria-hidden="true"><span class="chip-dot"></span><div><b>Prompt IA prêt</b><small>ChatGPT, Claude, Gemini…</small></div></div>
-          <div class="float-chip chip-lock" aria-hidden="true"><span class="chip-ico">🔒</span><div><b>100 % local</b><small>Rien ne quitte ton navigateur</small></div></div>
-          <div class="signature"><b>Hermès BARRY</b><span>Créateur d'ATS Tester</span></div>
-        </div>
-      </section>
-
-      <!-- Fonctionnalités -->
-      <section class="block" id="fonctionnalites">
-        <div class="block-head">
-          <div class="kicker">Ce que fait ATS Tester</div>
-          <h2 class="block-title">Trois outils pour une candidature<br><span class="grad-text">qui arrive jusqu'au recruteur</span></h2>
-        </div>
-        <div class="features">
-          <article class="feature">
-            <div class="feature-art art-blue" aria-hidden="true">
-              <div class="mock-chips"><span class="ok">✓ QGIS</span><span class="ok">✓ Python</span><span class="ko">✗ FME</span><span class="ok">✓ PostGIS</span><span class="ko">✗ ArcGIS</span></div>
-            </div>
-            <div class="feature-body">
-              <span class="pill-tag">Mots-clés</span>
-              <h3>Analyse de l'offre</h3>
-              <p>Compétences, logiciels, méthodes et savoir-être repérés dans la fiche de poste, puis cherchés dans ton CV et ta lettre, synonymes compris.</p>
-            </div>
-          </article>
-          <article class="feature">
-            <div class="feature-art art-teal" aria-hidden="true">
-              <ul class="mock-checks"><li class="ok">Texte lisible</li><li class="ok">Rubriques standards</li><li class="warn">Intitulé du poste</li><li class="ok">Coordonnées</li></ul>
-            </div>
-            <div class="feature-body">
-              <span class="pill-tag">Vérifications</span>
-              <h3>Contrôles ATS</h3>
-              <p>PDF scanné, ligatures « fi », rubriques, dates, longueur, formule de politesse : ce qui fait rejeter un dossier avant même sa lecture.</p>
-            </div>
-          </article>
-          <article class="feature">
-            <div class="feature-art art-green" aria-hidden="true">
-              <div class="mock-prompt"><i></i><i></i><i></i><i class="short"></i><b>Copier le prompt ↗</b></div>
-            </div>
-            <div class="feature-body">
-              <span class="pill-tag">IA générative</span>
-              <h3>Prompt sur mesure</h3>
-              <p>Un prompt prêt à coller dans ton IA : retouches précises qui gardent ta charte graphique, sans jamais inventer une compétence.</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <!-- Chiffres et compatibilité -->
-      <section class="block panels">
-        <article class="panel">
-          <div class="panel-title">Ce qui est vérifié</div>
-          <ul class="spec-list">
-            <li><span class="spec-ico">⌕</span>Mots-clés de l'offre</li>
-            <li><span class="spec-ico">▤</span>Lisibilité du PDF</li>
-            <li><span class="spec-ico">☰</span>Rubriques standards</li>
-            <li><span class="spec-ico">◎</span>Intitulé exact du poste</li>
-            <li><span class="spec-ico">✆</span>Coordonnées</li>
-            <li><span class="spec-ico">ﬁ</span>Ligatures typographiques</li>
-          </ul>
-        </article>
-        <article class="panel">
-          <div class="panel-title">En chiffres</div>
-          <div class="metrics">
-            <div class="metric"><b>146</b><span>compétences reconnues</span></div>
-            <div class="metric"><b>10</b><span>contrôles du CV</span></div>
-            <div class="metric"><b>8</b><span>contrôles de la lettre</span></div>
-            <div class="metric"><b>0</b><span>fichier envoyé</span></div>
-          </div>
-        </article>
-        <article class="panel">
-          <div class="panel-title">Compatible avec</div>
-          <div class="tools">
-            <span class="tool"><b>PDF</b>Document</span>
-            <span class="tool"><b>DOCX</b>Word</span>
-            <span class="tool"><b>TXT</b>Texte</span>
-            <span class="tool"><b>GPT</b>ChatGPT</span>
-            <span class="tool"><b>CL</b>Claude</span>
-            <span class="tool"><b>GE</b>Gemini</span>
-          </div>
-        </article>
-      </section>
-
-      <!-- Méthode -->
-      <section class="block" id="methode">
-        <div class="block-head">
-          <div class="kicker">Méthode</div>
-          <h2 class="block-title">Cinq étapes, <span class="grad-text">dix minutes</span></h2>
-        </div>
-        <ol class="workflow">
-          <li><span class="wf-num">01</span><b>Colle l'offre</b><p>Texte de l'annonce, ou fichier PDF, DOCX, TXT.</p></li>
-          <li><span class="wf-num">02</span><b>Importe ton CV</b><p>Et ta lettre de motivation si tu en as une.</p></li>
-          <li><span class="wf-num">03</span><b>Analyse</b><p>Scores, mots-clés manquants et recommandations.</p></li>
-          <li><span class="wf-num">04</span><b>Perfectionne</b><p>Copie le prompt dans ton IA et applique ses retouches.</p></li>
-          <li><span class="wf-num">05</span><b>Suis tes envois</b><p>Enregistre chaque candidature et son statut.</p></li>
-        </ol>
-      </section>
-
-      <!-- Créateur -->
-      <section class="block creator">
-        <img class="creator-photo" src="assets/img/hermes-barry.webp" width="900" height="675" alt="">
-        <div class="creator-text">
-          <div class="kicker">Le créateur</div>
-          <h2 class="block-title">Hermès BARRY</h2>
-          <p>Géomaticien, j'ai conçu ATS Tester pour aider chaque candidat à passer le premier filtre des recrutements. L'outil est gratuit, open source, et tout se passe dans ton navigateur.</p>
-          <div class="creator-links">
-            <a class="btn btn-ghost btn-small" href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn ↗</a>
-            <a class="btn btn-ghost btn-small" href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">Code source ↗</a>
-          </div>
-        </div>
-        <div class="creator-cta">
-          <b>Prêt à passer le filtre ?</b>
-          <a class="btn btn-neon" href="#analyser" data-goto="analyser">Lancer l'analyse <span class="arrow" aria-hidden="true">↗</span></a>
-        </div>
-      </section>
-
-      <!-- Outil -->
-      <div class="block-head tool-head" id="analyser">
-        <div class="kicker">L'analyseur</div>
-        <h2 class="block-title">Teste ta candidature</h2>
-        <p class="muted">Renseigne l'offre, ajoute ton CV, puis lance l'analyse. Rien n'est envoyé sur un serveur.</p>
+        <ul class="trust">
+          <li>Gratuit</li>
+          <li>Sans inscription</li>
+          <li>Aucun fichier envoyé</li>
+        </ul>
       </div>
 
-      <div id="storage-warning" class="notice warn" hidden>
-        Ton navigateur bloque la sauvegarde locale (navigation privée ?). Les candidatures enregistrées seront perdues à la fermeture de l'onglet : pense à les exporter.
-      </div>
-
-      <div class="grid-2">
-        <article class="card">
-          <div class="card-title-row">
-            <h2 class="card-title"><span class="step">1</span> L'offre d'emploi</h2>
-            <button class="link" id="btn-new-offer" type="button">↺ Nouvelle offre</button>
-          </div>
-          <div class="fields">
-            <label class="field">
-              <span>Entreprise</span>
-              <input id="company" type="text" placeholder="Nom de l'entreprise" autocomplete="off">
-            </label>
-            <label class="field">
-              <span>Intitulé exact du poste</span>
-              <input id="title" type="text" placeholder="Tel qu'écrit dans l'annonce" autocomplete="off">
-            </label>
-            <label class="field field-wide">
-              <span>Lien de l'annonce <em>(facultatif)</em></span>
-              <input id="url" type="url" placeholder="https://…">
-            </label>
-          </div>
-
-          <div class="field-head">
-            <span class="label">Fiche de poste</span>
-            <label class="btn btn-small btn-ghost file-btn">
-              Importer un fichier
-              <input id="jd-file" type="file" hidden>
-            </label>
-          </div>
-          <div class="drop drop-text" id="jd-drop">
-            <textarea id="jd" rows="12" placeholder="Colle ici le texte de l'annonce (missions, profil, outils…), ou glisse un fichier PDF, DOCX ou TXT."></textarea>
-          </div>
-          <p class="hint" id="jd-status">Formats acceptés : texte collé, PDF, DOCX, TXT, MD, HTML, RTF.</p>
-        </article>
-
-        <article class="card card-docs">
-          <h2 class="card-title"><span class="step">2</span> Tes documents</h2>
-
-          <div class="doc" data-kind="cv">
-            <div class="doc-head">
-              <span class="label">CV</span>
-              <button class="link" data-toggle-paste="cv">Coller le texte à la place</button>
-            </div>
-            <div class="drop drop-file" id="drop-cv" tabindex="0" role="button" aria-label="Importer le CV">
-              <input type="file" id="file-cv" hidden>
-              <div class="drop-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9 14l3-3 3 3"/></svg>
-              </div>
-              <div class="drop-text-main">Glisse ton CV ici ou <u>clique pour choisir</u></div>
-              <div class="drop-text-sub">PDF ou DOCX recommandés</div>
-            </div>
-            <textarea class="paste" id="paste-cv" rows="8" placeholder="Colle le texte de ton CV…" hidden></textarea>
-            <div class="doc-status" id="status-cv"></div>
-          </div>
-
-          <div class="doc" data-kind="letter">
-            <div class="doc-head">
-              <span class="label">Lettre de motivation <em>(facultatif)</em></span>
-              <button class="link" data-toggle-paste="letter">Coller le texte à la place</button>
-            </div>
-            <div class="drop drop-file" id="drop-letter" tabindex="0" role="button" aria-label="Importer la lettre de motivation">
-              <input type="file" id="file-letter" hidden>
-              <div class="drop-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg>
-              </div>
-              <div class="drop-text-main">Glisse ta lettre ici ou <u>clique pour choisir</u></div>
-              <div class="drop-text-sub">PDF, DOCX ou TXT</div>
-            </div>
-            <textarea class="paste" id="paste-letter" rows="8" placeholder="Colle le texte de ta lettre…" hidden></textarea>
-            <div class="doc-status" id="status-letter"></div>
-          </div>
-
-          <aside class="tips">
-            <div class="tips-title">Les conseils du messager</div>
-            <ul>
-              <li>Exporte ton CV en <b>PDF texte</b> depuis Word ou Google Docs, pas en image.</li>
-              <li>Reprends l'<b>intitulé exact</b> du poste sous ton nom.</li>
-              <li>Garde des rubriques classiques : Expériences, Formation, Compétences.</li>
-            </ul>
-            <p>🔒 Tes fichiers sont lus dans ton navigateur et ne sont jamais envoyés.</p>
-          </aside>
-        </article>
-      </div>
-
-      <div class="actions">
-        <button id="btn-analyze" class="btn btn-primary btn-large">Analyser ma candidature</button>
-        <button id="btn-reset" class="btn btn-ghost">Tout effacer</button>
-        <span class="error" id="analyze-error" role="alert"></span>
-      </div>
-
-      <!-- ================= RÉSULTATS ================= -->
-      <section id="results" hidden>
-        <article class="card summary">
-          <div class="summary-main">
-            <div class="ring ring-xl" id="ring-global"><span></span></div>
-            <div>
-              <div class="eyebrow">Indice de compatibilité ATS</div>
-              <h2 class="verdict" id="verdict"></h2>
-              <p class="muted" id="summary-line"></p>
-            </div>
-          </div>
-          <div class="summary-side">
-            <div class="mini">
-              <div class="ring" id="ring-cv"><span></span></div>
-              <div><b>CV</b><div class="muted small" id="cv-sub"></div></div>
-            </div>
-            <div class="mini">
-              <div class="ring" id="ring-letter"><span></span></div>
-              <div><b>Lettre</b><div class="muted small" id="letter-sub"></div></div>
-            </div>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="card-title-row">
-            <h2 class="card-title">Recommandations</h2>
-            <button class="link" id="go-ai">Corriger avec mon IA ↓</button>
-          </div>
-          <ul class="recos" id="recos"></ul>
-        </article>
-
-        <article class="card">
-          <div class="card-title-row">
-            <h2 class="card-title">Mots-clés de l'offre</h2>
-            <span class="muted small">Clique sur une ligne pour ignorer un mot-clé non pertinent.</span>
-          </div>
-          <div class="table-wrap">
-            <table class="kw-table" id="kw-table">
-              <thead><tr><th>Mot-clé</th><th>Dans l'offre</th><th>CV</th><th>Lettre</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </article>
-
-        <article class="card">
-          <h2 class="card-title">Vérifications ATS</h2>
-          <div class="grid-2 checks-grid">
-            <div><h3 class="sub">CV</h3><ul class="checks" id="checks-cv"></ul></div>
-            <div><h3 class="sub">Lettre</h3><ul class="checks" id="checks-letter"></ul></div>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="card-title-row">
-            <h2 class="card-title">Ce que voit l'ATS</h2>
-            <div class="seg" role="tablist">
-              <button class="seg-btn is-active" data-raw="cv">CV</button>
-              <button class="seg-btn" data-raw="letter">Lettre</button>
-            </div>
-          </div>
-          <p class="muted small">Voici le texte brut extrait de ton document, dans l'ordre où un logiciel le lit. Les mots-clés trouvés sont surlignés. S'il manque des informations ou si l'ordre est incohérent, l'ATS les perdra aussi.</p>
-          <pre class="raw" id="raw-text"></pre>
-        </article>
-
-        <article class="card" id="ai-card">
-          <div class="card-title-row">
-            <h2 class="card-title">Perfectionner avec ton IA</h2>
-            <span class="muted small" id="ai-size"></span>
-          </div>
-          <p class="muted small">Ce prompt reprend la fiche de poste, tes documents et les résultats ci-dessus. Colle-le dans ton IA (ChatGPT, Claude, Gemini, Le Chat, Copilot…) : elle n'inventera aucune compétence et te posera des questions sur celles qui manquent.</p>
-          <div class="ai-options">
-            <label class="field">
-              <span>Type de modifications</span>
-              <select id="ai-mode">
-                <option value="edit">Retouches, en gardant ma mise en page</option>
-                <option value="rewrite">Réécriture complète</option>
-              </select>
-            </label>
-            <label class="field">
-              <span>À perfectionner</span>
-              <select id="ai-target"></select>
-            </label>
-            <label class="check"><input type="checkbox" id="ai-mask" checked> Masquer mon e-mail et mon téléphone</label>
-          </div>
-          <textarea id="ai-prompt" class="ai-prompt" rows="14" spellcheck="false" aria-label="Prompt à copier dans ton IA"></textarea>
-          <div class="actions actions-tight">
-            <button id="btn-copy-prompt" class="btn btn-primary">Copier le prompt</button>
-            <span class="ai-links">Copier et ouvrir :
-              <a href="https://chatgpt.com/" target="_blank" rel="noopener" data-ai>ChatGPT</a>
-              <a href="https://claude.ai/new" target="_blank" rel="noopener" data-ai>Claude</a>
-              <a href="https://gemini.google.com/app" target="_blank" rel="noopener" data-ai>Gemini</a>
-              <a href="https://chat.mistral.ai/chat" target="_blank" rel="noopener" data-ai>Le Chat</a>
-              <a href="https://copilot.microsoft.com/" target="_blank" rel="noopener" data-ai>Copilot</a>
-            </span>
-          </div>
-          <p class="ok-msg ai-msg" id="ai-msg" role="status"></p>
-          <ol class="ai-steps" id="ai-steps"></ol>
-          <p class="hint">Le prompt contient le texte de tes documents : relis-le avant de le partager.</p>
-        </article>
-
-        <article class="card save-card">
-          <h2 class="card-title">Enregistrer cette candidature</h2>
-          <div class="fields">
-            <label class="field">
-              <span>Statut</span>
-              <select id="save-status"></select>
-            </label>
-            <label class="field">
-              <span>Date de candidature</span>
-              <input id="save-date" type="date">
-            </label>
-            <label class="field field-wide">
-              <span>Notes <em>(contact, relance, salaire…)</em></span>
-              <textarea id="save-notes" rows="3"></textarea>
-            </label>
-          </div>
-          <div class="actions actions-tight">
-            <button id="btn-save" class="btn btn-primary">Enregistrer dans Mes candidatures</button>
-            <span class="ok-msg" id="save-msg" role="status"></span>
-          </div>
-        </article>
-
-        <div class="next-offer">
-          <div>
-            <b>Une autre offre à tester ?</b>
-            <span class="muted">L'offre, la lettre et les résultats sont effacés. Ton CV reste chargé.</span>
-          </div>
-          <button id="btn-next-offer" class="btn btn-neon">Analyser une nouvelle offre <span class="arrow" aria-hidden="true">↺</span></button>
+      <div class="hero-visual reveal">
+        <div class="halo" aria-hidden="true"><span></span><span></span><span></span></div>
+        <img class="portrait" src="assets/img/hermes-barry.webp" width="900" height="675" alt="Portrait d'Hermès BARRY, créateur d'ATS Tester">
+        <svg class="sticker" viewBox="0 0 120 120" aria-hidden="true">
+          <defs><path id="sticker-circle" d="M60 60 m-46 0 a46 46 0 1 1 92 0 a46 46 0 1 1 -92 0"/></defs>
+          <circle cx="60" cy="60" r="58"/>
+          <text><textPath href="#sticker-circle">GRATUIT ✦ SANS INSCRIPTION ✦ 100 % LOCAL ✦ </textPath></text>
+          <text class="sticker-center" x="60" y="70" text-anchor="middle">🚀</text>
+        </svg>
+        <span class="sparkle s1" aria-hidden="true">✦</span>
+        <span class="sparkle s2" aria-hidden="true">✦</span>
+        <span class="sparkle s3" aria-hidden="true">✧</span>
+        <div class="float-chip chip-score" aria-hidden="true">
+          <div class="chip-ring"><span>80</span></div>
+          <div><b>Indice ATS 🎯</b><small>Exemple d'analyse</small></div>
         </div>
-      </section>
+        <div class="float-chip chip-ai" aria-hidden="true"><span class="chip-ico">✨</span><div><b>Prompt IA prêt</b><small>ChatGPT, Claude, Gemini…</small></div></div>
+        <div class="float-chip chip-lock" aria-hidden="true"><span class="chip-ico">🔒</span><div><b>100 % local</b><small>Rien ne quitte ton navigateur</small></div></div>
+        <div class="signature"><b>Hermès BARRY</b><span>Créateur d'ATS Tester</span></div>
+      </div>
     </section>
 
-    <!-- ================= HISTORIQUE ================= -->
-    <section id="view-history" class="view" hidden>
-      <div class="stats" id="stats"></div>
-      <article class="card">
-        <div class="toolbar">
-          <input id="search" type="search" placeholder="Rechercher une entreprise, un poste…">
-          <select id="filter-status"><option value="">Tous les statuts</option></select>
-          <div class="toolbar-right">
-            <button id="btn-export" class="btn btn-ghost btn-small">Exporter (JSON)</button>
-            <label class="btn btn-ghost btn-small file-btn">Importer<input id="import-file" type="file" accept=".json,application/json" hidden></label>
+    <!-- Bandeau défilant -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>Mots-clés de l'offre</span><span>Lisibilité du PDF</span><span>Rubriques standards</span><span>Intitulé exact du poste</span><span>Ligatures « fi »</span><span>Prompt pour ton IA</span><span>Suivi des candidatures</span><span>100 % gratuit</span>
+      <span>Mots-clés de l'offre</span><span>Lisibilité du PDF</span><span>Rubriques standards</span><span>Intitulé exact du poste</span><span>Ligatures « fi »</span><span>Prompt pour ton IA</span><span>Suivi des candidatures</span><span>100 % gratuit</span>
+    </div>
+  </div>
+
+    <!-- Fonctionnalités -->
+    <section class="block" id="fonctionnalites">
+      <div class="block-head reveal">
+        <div class="kicker">Ce que fait ATS Tester</div>
+        <h2 class="block-title">Trois outils pour une candidature<br><span class="grad-text shimmer">qui arrive jusqu'au recruteur</span></h2>
+      </div>
+      <div class="features">
+        <article class="feature tilt reveal">
+          <div class="feature-art art-blue" aria-hidden="true">
+            <span class="feature-emoji">🔍</span>
+            <div class="mock-chips"><span class="ok">✓ QGIS</span><span class="ok">✓ Python</span><span class="ko">✗ FME</span><span class="ok">✓ PostGIS</span><span class="ko">✗ ArcGIS</span></div>
+          </div>
+          <div class="feature-body">
+            <span class="pill-tag">Mots-clés</span>
+            <h3>Analyse de l'offre</h3>
+            <p>Compétences, logiciels, méthodes et savoir-être repérés dans la fiche de poste, puis cherchés dans ton CV et ta lettre, synonymes compris.</p>
+          </div>
+        </article>
+        <article class="feature tilt reveal">
+          <div class="feature-art art-violet" aria-hidden="true">
+            <span class="feature-emoji">🛡️</span>
+            <ul class="mock-checks"><li class="ok">Texte lisible</li><li class="ok">Rubriques standards</li><li class="warn">Intitulé du poste</li><li class="ok">Coordonnées</li></ul>
+          </div>
+          <div class="feature-body">
+            <span class="pill-tag">Vérifications</span>
+            <h3>Contrôles ATS</h3>
+            <p>PDF scanné, ligatures « fi », rubriques, dates, longueur, formule de politesse : ce qui fait rejeter un dossier avant même sa lecture.</p>
+          </div>
+        </article>
+        <article class="feature tilt reveal">
+          <div class="feature-art art-pink" aria-hidden="true">
+            <span class="feature-emoji">✨</span>
+            <div class="mock-prompt"><i></i><i></i><i></i><i class="short"></i><b>Copier le prompt ↗</b></div>
+          </div>
+          <div class="feature-body">
+            <span class="pill-tag">IA générative</span>
+            <h3>Prompt sur mesure</h3>
+            <p>Un prompt prêt à coller dans ton IA : retouches précises qui gardent ta charte graphique, sans jamais inventer une compétence.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Démo avant / après -->
+    <section class="block demo reveal" id="demo" data-mode="before">
+      <div class="demo-text">
+        <div class="kicker">Démo</div>
+        <h2 class="block-title">Avant et après<br><span class="grad-text shimmer">ton IA</span></h2>
+        <p class="muted">Clique pour voir comment un CV progresse quand on y ajoute, avec les mots exacts de l'offre, les compétences qu'on maîtrise vraiment. <em>(Exemple fictif.)</em></p>
+        <div class="demo-toggle" role="group" aria-label="Choisir l'exemple">
+          <button type="button" data-demo="before" aria-pressed="true">😬 Avant</button>
+          <button type="button" data-demo="after" aria-pressed="false">🤩 Après</button>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-score">
+          <div class="ring ring-xl demo-ring" data-tone="bad"><span>48</span></div>
+          <div>
+            <div class="eyebrow">Indice de compatibilité ATS</div>
+            <div class="demo-verdict">Risque élevé de rejet automatique 🛠️</div>
           </div>
         </div>
-        <div class="table-wrap">
-          <table class="apps" id="apps">
-            <thead><tr><th>Date</th><th>Entreprise</th><th>Poste</th><th>Statut</th><th>CV</th><th>Lettre</th><th></th></tr></thead>
-            <tbody></tbody>
-          </table>
+        <div class="demo-kw">
+          <span class="kw-flip" data-label="QGIS">QGIS</span>
+          <span class="kw-flip" data-label="Python">Python</span>
+          <span class="kw-flip flips">FME</span>
+          <span class="kw-flip flips">ArcGIS Pro</span>
+          <span class="kw-flip flips">PostgreSQL</span>
+          <span class="kw-flip">Rigueur</span>
+          <span class="kw-flip flips">Gestion de projet</span>
         </div>
-        <div class="empty" id="empty" hidden>
-          <p><b>Aucune candidature enregistrée pour l'instant.</b></p>
-          <p class="muted">Analyse une offre, puis clique sur « Enregistrer dans Mes candidatures ».</p>
+        <div class="demo-line"><span class="demo-old">Chargé d'études cartographiques</span><span class="demo-arrow">→</span><span class="demo-new">Géomaticien SIG – FME, ArcGIS Pro, PostgreSQL</span></div>
+      </div>
+    </section>
+
+    <!-- Chiffres et compatibilité -->
+    <section class="block panels">
+      <article class="panel reveal">
+        <div class="panel-title">Ce qui est vérifié</div>
+        <ul class="spec-list">
+          <li><span class="spec-ico">🔍</span>Mots-clés de l'offre</li>
+          <li><span class="spec-ico">📄</span>Lisibilité du PDF</li>
+          <li><span class="spec-ico">🗂️</span>Rubriques standards</li>
+          <li><span class="spec-ico">🎯</span>Intitulé exact du poste</li>
+          <li><span class="spec-ico">📞</span>Coordonnées</li>
+          <li><span class="spec-ico">🔤</span>Ligatures typographiques</li>
+        </ul>
+      </article>
+      <article class="panel reveal">
+        <div class="panel-title">En chiffres</div>
+        <div class="metrics">
+          <div class="metric"><b data-count="146">146</b><span>compétences reconnues</span></div>
+          <div class="metric"><b data-count="10">10</b><span>contrôles du CV</span></div>
+          <div class="metric"><b data-count="8">8</b><span>contrôles de la lettre</span></div>
+          <div class="metric"><b>0</b><span>fichier envoyé</span></div>
         </div>
-        <p class="hint">Tes candidatures sont gardées dans ce navigateur, sur cet appareil. Exporte-les régulièrement pour en garder une copie.</p>
+      </article>
+      <article class="panel reveal">
+        <div class="panel-title">Compatible avec</div>
+        <div class="tools">
+          <span class="tool"><b>PDF</b>Document</span>
+          <span class="tool"><b>DOCX</b>Word</span>
+          <span class="tool"><b>TXT</b>Texte</span>
+          <span class="tool"><b>GPT</b>ChatGPT</span>
+          <span class="tool"><b>CL</b>Claude</span>
+          <span class="tool"><b>GE</b>Gemini</span>
+        </div>
       </article>
     </section>
-  </main>
 
-  <dialog id="dlg">
-    <form method="dialog" class="dlg-inner">
-      <header class="dlg-head">
-        <div>
-          <div class="eyebrow" id="dlg-date"></div>
-          <h2 id="dlg-title"></h2>
-          <div class="muted" id="dlg-company"></div>
+    <!-- Méthode -->
+    <section class="block" id="methode">
+      <div class="block-head reveal">
+        <div class="kicker">Méthode</div>
+        <h2 class="block-title">Cinq étapes, <span class="grad-text shimmer">dix minutes</span></h2>
+      </div>
+      <ol class="workflow">
+        <li class="reveal"><span class="wf-num">01</span><span class="wf-emoji" aria-hidden="true">📋</span><b>Colle l'offre</b><p>Texte de l'annonce, ou fichier PDF, DOCX, TXT.</p></li>
+        <li class="reveal"><span class="wf-num">02</span><span class="wf-emoji" aria-hidden="true">📎</span><b>Importe ton CV</b><p>Et ta lettre de motivation si tu en as une.</p></li>
+        <li class="reveal"><span class="wf-num">03</span><span class="wf-emoji" aria-hidden="true">⚡</span><b>Analyse</b><p>Scores, mots-clés manquants et recommandations.</p></li>
+        <li class="reveal"><span class="wf-num">04</span><span class="wf-emoji" aria-hidden="true">🤖</span><b>Perfectionne</b><p>Copie le prompt dans ton IA et applique ses retouches.</p></li>
+        <li class="reveal"><span class="wf-num">05</span><span class="wf-emoji" aria-hidden="true">📈</span><b>Suis tes envois</b><p>Enregistre chaque candidature et son statut.</p></li>
+      </ol>
+    </section>
+
+    <!-- Créateur -->
+    <section class="block creator reveal" id="createur">
+      <img class="creator-photo" src="assets/img/hermes-barry.webp" width="900" height="675" alt="">
+      <div class="creator-text">
+        <div class="kicker">Le créateur</div>
+        <h2 class="block-title">Hermès BARRY</h2>
+        <p>Géomaticien, j'ai conçu ATS Tester pour aider chaque candidat à passer le premier filtre des recrutements. L'outil est gratuit, open source, et tout se passe dans ton navigateur.</p>
+        <div class="creator-links">
+          <a class="btn btn-ghost btn-small" href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn ↗</a>
+          <a class="btn btn-ghost btn-small" href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">Code source ↗</a>
         </div>
-        <button class="icon-btn" value="close" aria-label="Fermer">✕</button>
-      </header>
-      <div class="dlg-body" id="dlg-body"></div>
-      <footer class="dlg-foot">
-        <button type="button" class="btn btn-ghost btn-danger" id="dlg-delete">Supprimer</button>
-        <div class="spacer"></div>
-        <button type="button" class="btn btn-ghost" id="dlg-reload">Rouvrir dans l'analyseur</button>
-        <button type="button" class="btn btn-primary" id="dlg-save">Enregistrer</button>
-      </footer>
-    </form>
-  </dialog>
+      </div>
+    </section>
+
+    <!-- Appel final -->
+    <section class="block final-cta reveal">
+      <span class="sparkle s4" aria-hidden="true">✦</span><span class="sparkle s5" aria-hidden="true">✧</span>
+      <div class="kicker">C'est parti</div>
+      <h2 class="block-title">Prêt à passer<br><span class="grad-text shimmer">le filtre ?</span></h2>
+      <p class="muted">Dix minutes, aucune inscription, et ta candidature arrive enfin jusqu'au recruteur.</p>
+      <a class="btn btn-neon btn-large" href="analyser.html">Tester mon CV maintenant <span class="arrow" aria-hidden="true">↗</span></a>
+    </section>
+  </main>
 
   <footer class="footer">
     <div class="wrap footer-inner">
       <div class="footer-brand">
-        <img src="assets/img/logo.svg" width="36" height="36" alt="">
+        <img src="assets/img/logo.svg?v=8" width="36" height="36" alt="">
         <div>
           <div class="footer-name">ATS Tester</div>
           <div class="footer-tag">Le messager de ta candidature</div>
@@ -472,18 +252,11 @@
       </ul>
       <div class="footer-links">
         <span>© <span id="year">2026</span> ATS Tester · Hermès BARRY</span>
-        <span><a href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">GitHub</a></span>
+        <span><a href="analyser.html">Analyser</a> · <a href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">GitHub</a></span>
       </div>
     </div>
   </footer>
 
-  <script src="assets/vendor/pdf.min.js"></script>
-  <script src="assets/vendor/mammoth.browser.min.js"></script>
-  <script src="assets/js/keywords.js"></script>
-  <script src="assets/js/extract.js"></script>
-  <script src="assets/js/analyzer.js"></script>
-  <script src="assets/js/prompt.js"></script>
-  <script src="assets/js/storage.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/fx.js?v=8"></script>
 </body>
 </html>

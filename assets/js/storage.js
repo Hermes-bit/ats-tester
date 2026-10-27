@@ -9,8 +9,9 @@ window.ATS = window.ATS || {};
   const DRAFT = "atsTester.draft.v1";
   let memory = []; // secours si le stockage est bloqué (navigation privée stricte)
   let available = true;
-  // Les anciennes versions gardaient le brouillon indéfiniment : on le supprime
+  // Les anciennes versions gardaient un brouillon de l'offre : on le supprime partout
   try { localStorage.removeItem(DRAFT); } catch (e) {}
+  try { sessionStorage.removeItem(DRAFT); } catch (e) {}
 
   function load() {
     try {
@@ -57,10 +58,5 @@ window.ATS = window.ATS || {};
       }
       save(list);
       return { added, updated };
-    },
-    // Brouillon de l'offre : gardé le temps de l'onglet (survit à un rechargement), jamais d'une visite à l'autre
-    saveDraft(d) { try { sessionStorage.setItem(DRAFT, JSON.stringify(d)); } catch (e) {} },
-    loadDraft() { try { return JSON.parse(sessionStorage.getItem(DRAFT) || "null"); } catch (e) { return null; } },
-    clearDraft() { try { sessionStorage.removeItem(DRAFT); } catch (e) {} },
-  };
+    },  };
 })();

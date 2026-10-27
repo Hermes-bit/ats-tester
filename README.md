@@ -37,17 +37,22 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 
 ## Identité visuelle
 
-Le site est pensé comme une **page publicitaire** de l'outil, présentée par son créateur.
+Le site compte deux pages :
 
-- **Style** : fond noir bleuté, panneaux en verre dépoli, néons cyan, turquoise et vert, grands titres en capitales.
+- **`index.html`** : la page publicitaire de l'outil, présentée par son créateur (accroche avec portrait, fonctionnalités, démo avant / après, chiffres, méthode, créateur).
+- **`analyser.html`** : le testeur lui-même (analyse, prompt pour l'IA, suivi des candidatures). `analyser.html#candidatures` ouvre directement l'historique.
+
+Style « néon fun » :
+
+- **Ambiance** : nuit profonde, aurore de couleurs animée, panneaux en verre dépoli, bandeau défilant, badge rotatif, confettis quand une candidature passe le filtre.
 - **Logo** : une pièce grecque antique frappée d'une **coche ailée**, en clin d'œil à Hermès, le messager des dieux (l'aile rappelle ses sandales ailées, la coche une candidature qui passe le filtre).
-- **Accroche** : portrait détouré du créateur devant un anneau lumineux, avec des étiquettes flottantes (indice ATS, prompt IA, 100 % local).
-- **Couleurs** : fond `#060B0D`, cyan `#38BDF8`, turquoise `#2DD4BF`, émeraude `#34D399`.
+- **Couleurs** : fond `#07060F`, cyan `#22D3EE`, violet `#A78BFA`, rose `#F472B6`, citron vert `#A3E635`.
 - **Typographie** : *Cormorant Garamond* pour les titres, *Inter* pour le texte (hébergées dans le dépôt).
-- **Partage** : image d'aperçu pour LinkedIn et les réseaux sociaux (`assets/img/og-image.png`).
+- **Animations** : toutes désactivées si le système demande de réduire les animations.
 
 ## Utilisation
 
+0. Ouvre **Tester mon CV** (page `analyser.html`).
 1. Renseigne l'entreprise et l'**intitulé exact** du poste.
 2. Colle la fiche de poste ou importe-la (PDF, DOCX…).
 3. Importe ton CV et, si tu le souhaites, ta lettre de motivation.
@@ -89,7 +94,8 @@ Le dépôt contient un workflow (`.github/workflows/deploy.yml`) qui publie le s
 
 ```
 ats-tester/
-├── index.html                 # Page unique de l'application
+├── index.html                 # Page publicitaire (accueil)
+├── analyser.html              # Le testeur : analyse, prompt IA, suivi des candidatures
 ├── assets/
 │   ├── css/style.css          # Styles (clair / sombre, responsive)
 │   ├── js/keywords.js         # Dictionnaire de compétences et mots vides (FR / EN)
@@ -97,7 +103,8 @@ ats-tester/
 │   ├── js/analyzer.js         # Moteur d'analyse ATS : mots-clés, vérifications, scores
 │   ├── js/prompt.js           # Prompt pour une IA générative à partir des résultats
 │   ├── js/storage.js          # Sauvegarde locale des candidatures + export / import
-│   ├── js/app.js              # Interface
+│   ├── js/app.js              # Interface du testeur
+│   ├── js/fx.js               # Effets : apparitions, compteurs, démo, confettis
 │   ├── img/                   # Logo, favicon, portrait, icône iPhone, image de partage
 │   └── vendor/                # pdf.js 3.11.174, mammoth 1.8.0 et polices (inclus, sans CDN)
 ├── docs/                      # Captures d'écran
