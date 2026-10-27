@@ -1,0 +1,413 @@
+/* ATS Tester — interface */
+(function () {
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const esc = ATS.esc;
+
+  const state = {
+    docs: { cv: null, letter: null }, // { text, name, meta }
+    paste: { cv: false, letter: false },
+    result: null,
+    ignored: new Set(),
+    editingId: null,
+    rawTab: "cv",
+    loading: {}, // lectures de fichiers en cours
+    dialogId: null,
+  };
+
+  /* ---------- Onglets ---------- */
+  function showView(v) {
+    $$(".tab").forEach((t) => { const on = t.dataset.view === v; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", on); });
+    $("#view-analyze").hidden = v !== "analyze";
+    $("#view-history").hidden = v !== "history";
+    if (v === "history") renderHistory();
+    window.scrollTo({ top: 0 });
+  }
+  $$(".tab").forEach((t) => t.addEventListener("click", () => showView(t.dataset.view)));
+
+  /* ---------- Fiche de poste ---------- */
+  const jd = $("#jd");
+  function setJdStatus(html, cls) { $("#jd-status").innerHTML = cls ? '<span class="' + cls + '">' + html + "</span>" : html; }
+  async function importJd(file) {
+    setJdStatus("Lecture de « " + esc(file.name) + " »…");
+    try {
+      const { text } = await ATS.extractFile(file);
+      if (!text.trim()) throw new Error("Aucun texte trouvé dans ce fichier (document scanné ?).");
+      jd.value = text;
+      setJdStatus("✓ Texte importé depuis « " + esc(file.name) + " ». Tu peux le corriger ci-dessus.");
+      saveDraft();
+    } catch (e) { setJdStatus("✗ " + esc(e.message), "error"); }
+  }
+  $("#jd-file").accept = ATS.ACCEPT;
+  $("#jd-file").addEventListener("change", (e) => { if (e.target.files[0]) importJd(e.target.files[0]); e.target.value = ""; });
+  dropTarget($("#jd-drop"), importJd);
+
+  /* ---------- Documents ---------- */
+  function dropTarget(el, onFile) {
+    ["dragenter", "dragover"].forEach((ev) => el.addEventListener(ev, (e) => { e.preventDefault(); el.classList.add("is-over"); }));
+    ["dragleave", "drop"].forEach((ev) => el.addEventListener(ev, (e) => { e.preventDefault(); el.classList.remove("is-over"); }));
+    el.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) onFile(f); });
+  }
+
+  ["cv", "letter"].forEach((kind) => {
+    const drop = $("#drop-" + kind), input = $("#file-" + kind);
+    input.accept = ATS.ACCEPT;
+    drop.addEventListener("click", () => input.click());
+    drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+    input.addEventListener("change", () => { if (input.files[0]) loadDoc(kind, input.files[0]); input.value = ""; });
+    dropTarget(drop, (f) => loadDoc(kind, f));
+  });
+
+  $$("[data-toggle-paste]").forEach((b) => b.addEventListener("click", () => togglePaste(b.dataset.togglePaste)));
+  function togglePaste(kind, force) {
+    const on = force !== undefined ? force : !state.paste[kind];
+    state.paste[kind] = on;
+    $("#drop-" + kind).hidden = on;
+    $("#paste-" + kind).hidden = !on;
+    $('[data-toggle-paste="' + kind + '"]').textContent = on ? "Importer un fichier à la place" : "Coller le texte à la place";
+    if (on) $("#paste-" + kind).focus();
+    renderDocStatus(kind);
+  }
+  $$(".paste").forEach((t) => t.addEventListener("input", () => renderDocStatus(t.id.replace("paste-", ""))));
+
+  function loadDoc(kind, file) {
+    const p = readDoc(kind, file);
+    state.loading[kind] = p;
+    p.finally(() => { if (state.loading[kind] === p) delete state.loading[kind]; });
+    return p;
+  }
+
+  async function readDoc(kind, file) {
+    const st = $("#status-" + kind);
+    st.innerHTML = "Lecture de « " + esc(file.name) + " »…";
+    try {
+      const res = await ATS.extractFile(file);
+      state.docs[kind] = { text: res.text, name: file.name, meta: res.meta };
+      renderDocStatus(kind);
+    } catch (e) {
+      state.docs[kind] = null;
+      $("#drop-" + kind).classList.remove("has-file");
+      st.innerHTML = '<span class="err">✗ ' + esc(e.message) + "</span>";
+    }
+  }
+
+  function wc(t) { return (t.match(/[\p{L}\p{N}][\p{L}\p{N}\-]*/gu) || []).length; }
+
+  function renderDocStatus(kind) {
+    const st = $("#status-" + kind), drop = $("#drop-" + kind);
+    if (state.paste[kind]) {
+      const t = $("#paste-" + kind).value.trim();
+      st.innerHTML = t ? wc(t) + " mots collés" : "";
+      return;
+    }
+    const d = state.docs[kind];
+    drop.classList.toggle("has-file", !!d);
+    if (!d) { st.innerHTML = ""; resetDrop(kind); return; }
+    const bits = [d.meta.type.toUpperCase()];
+    if (d.meta.pages) bits.push(d.meta.pages + " page" + (d.meta.pages > 1 ? "s" : ""));
+    bits.push(wc(d.text) + " mots lus");
+    const warn = d.text.replace(/\s/g, "").length < 200 ? ' · <span class="err">presque aucun texte lisible</span>' : "";
+    st.innerHTML = '<span class="ok">✓ ' + esc(d.name) + "</span> · " + bits.join(" · ") + warn + ' · <button class="link" data-clear="' + kind + '">retirer</button>';
+    $('[data-clear="' + kind + '"]', st).addEventListener("click", () => { state.docs[kind] = null; renderDocStatus(kind); });
+    drop.querySelector(".drop-text-main").innerHTML = "Fichier chargé : <b>" + esc(d.name) + "</b>";
+    drop.querySelector(".drop-text-sub").textContent = "Clique ou glisse un autre fichier pour le remplacer";
+  }
+
+  function resetDrop(kind) {
+    const d = $("#drop-" + kind);
+    d.classList.remove("has-file");
+    d.querySelector(".drop-text-main").innerHTML = (kind === "cv" ? "Glisse ton CV ici" : "Glisse ta lettre ici") + " ou <u>clique pour choisir</u>";
+    d.querySelector(".drop-text-sub").textContent = kind === "cv" ? "PDF ou DOCX recommandés" : "PDF, DOCX ou TXT";
+  }
+
+  function getDoc(kind) {
+    if (state.paste[kind]) {
+      const t = $("#paste-" + kind).value.trim();
+      return t ? { text: t, name: "Texte collé", meta: { type: "texte" } } : null;
+    }
+    return state.docs[kind];
+  }
+
+  /* ---------- Brouillon ---------- */
+  function saveDraft() { ATS.store.saveDraft({ company: $("#company").value, title: $("#title").value, url: $("#url").value, jd: jd.value }); }
+  ["#company", "#title", "#url", "#jd"].forEach((s) => $(s).addEventListener("input", saveDraft));
+  const draft = ATS.store.loadDraft();
+  if (draft) { $("#company").value = draft.company || ""; $("#title").value = draft.title || ""; $("#url").value = draft.url || ""; jd.value = draft.jd || ""; }
+
+  /* ---------- Analyse ---------- */
+  $("#btn-analyze").addEventListener("click", async () => {
+    const btn = $("#btn-analyze");
+    const pending = Object.values(state.loading);
+    if (pending.length) {
+      btn.disabled = true; btn.textContent = "Lecture des fichiers…";
+      await Promise.allSettled(pending);
+      btn.disabled = false; btn.textContent = "Analyser ma candidature";
+    }
+    runAnalysis(true);
+  });
+  function runAnalysis(scroll) {
+    const err = $("#analyze-error");
+    err.textContent = "";
+    const jdText = jd.value.trim();
+    const cv = getDoc("cv"), letter = getDoc("letter");
+    if (jdText.length < 80) { err.textContent = "Ajoute la fiche de poste (au moins quelques lignes)."; jd.focus(); return; }
+    if (!cv && !letter) { err.textContent = "Ajoute ton CV et/ou ta lettre de motivation."; return; }
+    const result = ATS.analyze({ jdText, title: $("#title").value, company: $("#company").value, cv, letter, ignored: [...state.ignored] });
+    state.result = result;
+    renderResults(result, { jdText, cv, letter });
+    $("#results").hidden = false;
+    if (scroll) $("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function tone(score) { return score === null || score === undefined ? "none" : ATS.verdict(score).tone; }
+  function setRing(el, score) {
+    el.style.setProperty("--v", score === null ? 0 : score);
+    el.dataset.tone = tone(score);
+    el.querySelector("span").textContent = score === null ? "—" : score;
+  }
+
+  function renderResults(r, ctx) {
+    setRing($("#ring-global"), r.global);
+    setRing($("#ring-cv"), r.cv ? r.cv.score : null);
+    setRing($("#ring-letter"), r.letter ? r.letter.score : null);
+    const v = ATS.verdict(r.global);
+    const vEl = $("#verdict"); vEl.textContent = v.label; vEl.className = "verdict " + v.tone;
+    const nSkills = r.keywords.skills.length + r.keywords.others.length;
+    const cvFound = r.cv ? r.cv.coverage.filter((c) => c.found).length : 0;
+    const cvTot = r.cv ? r.cv.coverage.length : 0;
+    $("#summary-line").textContent = nSkills + " mots-clés repérés dans l'offre" + (r.cv ? " · " + cvFound + " / " + cvTot + " présents dans ton CV" : "") + ".";
+    $("#cv-sub").textContent = r.cv ? "Mots-clés " + r.cv.kwScore + " % · Format " + r.cv.formatScore + " %" : "Non fourni";
+    $("#letter-sub").textContent = r.letter ? "Mots-clés " + r.letter.kwScore + " % · Forme " + r.letter.formatScore + " %" : "Non fournie";
+
+    // Recommandations
+    $("#recos").innerHTML = r.recommendations.length
+      ? r.recommendations.map((x) => '<li class="' + x.level + '">' + x.text + "</li>").join("")
+      : '<li class="none">Rien à signaler : ta candidature couvre bien l\'offre. Relis-la une dernière fois et envoie-la !</li>';
+
+    // Tableau des mots-clés
+    const rows = [];
+    const cvMap = new Map((r.cv ? r.cv.coverage : []).map((c) => [c.key, c]));
+    const lmMap = new Map((r.letter ? r.letter.coverage : []).map((c) => [c.key, c]));
+    const groups = [...Object.entries(ATS.CATEGORIES), ["other", "Autres termes fréquents de l'offre"]];
+    const all = [...r.keywords.skills, ...r.keywords.others];
+    for (const [cat, label] of groups) {
+      const items = all.filter((k) => k.cat === cat).sort((a, b) => (b.weight || 0) - (a.weight || 0));
+      if (!items.length) continue;
+      rows.push('<tr class="cat"><td colspan="4">' + esc(label) + "</td></tr>");
+      for (const k of items) {
+        const ign = state.ignored.has(k.key);
+        const c = cvMap.get(k.key), l = lmMap.get(k.key);
+        const cell = (x, provided) => !provided ? '<td class="na">—</td>' : ign ? '<td class="na">ignoré</td>' : x && x.found ? '<td class="yes">✓ ' + (x.found > 1 ? "×" + x.found : "") + "</td>" : '<td class="no">✗</td>';
+        rows.push('<tr class="kw' + (ign ? " ignored" : "") + '" data-key="' + esc(k.key) + '" title="' + (ign ? "Cliquer pour réintégrer" : "Cliquer pour ignorer ce mot-clé") + '">' +
+          "<td>" + esc(k.label) + (k.bonus ? '<span class="tag">un plus</span>' : "") + "</td>" +
+          '<td class="count">×' + (k.count || 1) + "</td>" + cell(c, !!r.cv) + cell(l, !!r.letter) + "</tr>");
+      }
+    }
+    const tbody = $("#kw-table tbody");
+    tbody.innerHTML = rows.join("") || '<tr><td colspan="4" class="muted">Aucun mot-clé repéré. La fiche de poste est-elle complète ?</td></tr>';
+    $$("tr.kw", tbody).forEach((tr) => tr.addEventListener("click", () => {
+      const k = tr.dataset.key;
+      state.ignored.has(k) ? state.ignored.delete(k) : state.ignored.add(k);
+      runAnalysis(false);
+    }));
+
+    // Vérifications
+    const checkList = (res, el) => {
+      el.innerHTML = !res ? '<li class="muted">Document non fourni.</li>' : res.checks.map((c) =>
+        '<li class="' + c.status + '"><span class="ic">' + (c.status === "ok" ? "✓" : c.status === "warn" ? "!" : "✗") + "</span><div><div class=\"lbl\">" + esc(c.label) + '</div><div class="det">' + esc(c.detail) + "</div></div></li>").join("");
+    };
+    checkList(r.cv, $("#checks-cv"));
+    checkList(r.letter, $("#checks-letter"));
+
+    // Texte brut
+    state.rawCtx = ctx;
+    renderRaw();
+
+    // Formulaire d'enregistrement
+    if (!$("#save-date").value) $("#save-date").value = new Date().toISOString().slice(0, 10);
+    $("#btn-save").textContent = state.editingId ? "Mettre à jour la candidature" : "Enregistrer dans Mes candidatures";
+    $("#save-msg").textContent = "";
+  }
+
+  $$(".seg-btn").forEach((b) => b.addEventListener("click", () => {
+    state.rawTab = b.dataset.raw;
+    $$(".seg-btn").forEach((x) => x.classList.toggle("is-active", x === b));
+    renderRaw();
+  }));
+  function renderRaw() {
+    const ctx = state.rawCtx, r = state.result;
+    if (!ctx || !r) return;
+    const doc = state.rawTab === "cv" ? ctx.cv : ctx.letter;
+    const res = state.rawTab === "cv" ? r.cv : r.letter;
+    if (!doc) { $("#raw-text").innerHTML = '<span class="muted">Document non fourni.</span>'; return; }
+    const found = new Set(res.coverage.filter((c) => c.found).map((c) => c.key));
+    $("#raw-text").innerHTML = ATS.highlight(doc.text, found, ctx.jdText, $("#title").value) || '<span class="muted">(aucun texte)</span>';
+  }
+
+  /* ---------- Enregistrement ---------- */
+  const statusSel = $("#save-status"), filterSel = $("#filter-status");
+  ATS.store.STATUSES.forEach((s) => { statusSel.add(new Option(s, s)); filterSel.add(new Option(s, s)); });
+  statusSel.value = "Envoyée";
+
+  $("#btn-save").addEventListener("click", () => {
+    const r = state.result;
+    if (!r) return;
+    const company = $("#company").value.trim(), title = $("#title").value.trim();
+    if (!company) { $("#save-msg").innerHTML = '<span class="error">Indique le nom de l\'entreprise (étape 1).</span>'; $("#company").focus(); return; }
+    const cv = getDoc("cv"), letter = getDoc("letter");
+    const app = {
+      id: state.editingId || undefined,
+      company, title: title || "Poste sans intitulé", url: $("#url").value.trim(),
+      status: statusSel.value, appliedAt: $("#save-date").value, notes: $("#save-notes").value,
+      jdText: jd.value, cvText: cv ? cv.text : "", cvName: cv ? cv.name : "", letterText: letter ? letter.text : "", letterName: letter ? letter.name : "",
+      scores: { global: r.global, cv: r.cv ? r.cv.score : null, letter: r.letter ? r.letter.score : null },
+      missingCv: r.cv ? r.cv.coverage.filter((c) => !c.found && c.cat !== "other").map((c) => c.label) : [],
+      ignored: [...state.ignored], analyzedAt: r.date,
+    };
+    const saved = ATS.store.upsert(app);
+    state.editingId = saved.id;
+    $("#btn-save").textContent = "Mettre à jour la candidature";
+    $("#save-msg").textContent = "✓ Enregistrée dans Mes candidatures";
+    updateCount();
+  });
+
+  /* ---------- Historique ---------- */
+  function updateCount() { $("#history-count").textContent = ATS.store.list().length; }
+  $("#search").addEventListener("input", renderHistory);
+  filterSel.addEventListener("change", renderHistory);
+
+  function fmtDate(d) { if (!d) return "—"; const x = new Date(d.length === 10 ? d + "T12:00:00" : d); return isNaN(x) ? d : x.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }); }
+  function pill(score) { return score === null || score === undefined ? '<span class="pill none">—</span>' : '<span class="pill ' + tone(score) + '">' + score + "</span>"; }
+
+  function renderHistory() {
+    const all = ATS.store.list();
+    const q = ATS.norm($("#search").value), f = filterSel.value;
+    const list = all.filter((a) => (!f || a.status === f) && (!q || ATS.norm(a.company + " " + a.title + " " + (a.notes || "")).includes(q)));
+    const tbody = $("#apps tbody");
+    tbody.innerHTML = list.map((a) =>
+      '<tr data-id="' + esc(a.id) + '"><td>' + fmtDate(a.appliedAt) + '</td><td class="wrap-cell"><b>' + esc(a.company) + '</b></td><td class="wrap-cell">' + esc(a.title) + "</td>" +
+      "<td><select data-status>" + ATS.store.STATUSES.map((s) => "<option" + (s === a.status ? " selected" : "") + ">" + esc(s) + "</option>").join("") + "</select></td>" +
+      "<td>" + pill(a.scores && a.scores.cv) + "</td><td>" + pill(a.scores && a.scores.letter) + '</td><td><button class="btn btn-ghost btn-small" data-open>Ouvrir</button></td></tr>').join("");
+    $("#empty").hidden = all.length > 0;
+    $("#apps").hidden = all.length === 0;
+    $$("tr[data-id]", tbody).forEach((tr) => {
+      const id = tr.dataset.id;
+      $("[data-status]", tr).addEventListener("change", (e) => { ATS.store.upsert({ id, status: e.target.value }); renderStats(); });
+      $("[data-open]", tr).addEventListener("click", () => openDialog(id));
+    });
+    renderStats();
+    updateCount();
+  }
+
+  function renderStats() {
+    const all = ATS.store.list();
+    const sent = all.filter((a) => a.status !== "À envoyer").length;
+    const itw = all.filter((a) => a.status === "Entretien" || a.status === "Offre reçue").length;
+    const cvScores = all.map((a) => a.scores && a.scores.cv).filter((x) => typeof x === "number");
+    const avg = cvScores.length ? Math.round(cvScores.reduce((a, b) => a + b, 0) / cvScores.length) : "—";
+    $("#stats").innerHTML = [
+      ["Candidatures", all.length], ["Envoyées", sent], ["Entretiens / offres", itw], ["Score CV moyen", avg],
+    ].map(([l, v]) => '<div class="stat"><b>' + v + "</b><span>" + l + "</span></div>").join("");
+  }
+
+  /* ---------- Fenêtre de détail ---------- */
+  const dlg = $("#dlg");
+  function openDialog(id) {
+    const a = ATS.store.get(id);
+    if (!a) return;
+    state.dialogId = id;
+    $("#dlg-date").textContent = "Candidature du " + fmtDate(a.appliedAt);
+    $("#dlg-title").textContent = a.title;
+    $("#dlg-company").innerHTML = esc(a.company) + (a.url ? ' · <a href="' + esc(a.url) + '" target="_blank" rel="noopener">voir l\'annonce</a>' : "");
+    $("#dlg-body").innerHTML =
+      '<div class="scores">' +
+        '<div class="mini"><div class="ring" id="d-ring-g"><span></span></div><div><b>Global</b></div></div>' +
+        '<div class="mini"><div class="ring" id="d-ring-c"><span></span></div><div><b>CV</b><div class="muted small">' + esc(a.cvName || "") + "</div></div></div>" +
+        '<div class="mini"><div class="ring" id="d-ring-l"><span></span></div><div><b>Lettre</b><div class="muted small">' + esc(a.letterName || "") + "</div></div></div>" +
+      "</div>" +
+      '<div class="fields"><label class="field"><span>Statut</span><select id="d-status">' + ATS.store.STATUSES.map((s) => "<option" + (s === a.status ? " selected" : "") + ">" + esc(s) + "</option>").join("") + '</select></label>' +
+      '<label class="field"><span>Date de candidature</span><input id="d-date" type="date" value="' + esc(a.appliedAt || "") + '"></label>' +
+      '<label class="field field-wide"><span>Notes</span><textarea id="d-notes" rows="3">' + esc(a.notes || "") + "</textarea></label></div>" +
+      (a.missingCv && a.missingCv.length ? '<div><div class="label" style="margin-bottom:6px">Mots-clés absents du CV lors de l\'analyse</div><div class="chips">' + a.missingCv.map((m) => '<span class="chip">' + esc(m) + "</span>").join("") + "</div></div>" : "") +
+      "<details><summary>Fiche de poste enregistrée</summary><pre>" + esc(a.jdText || "") + "</pre></details>" +
+      (a.cvText ? "<details><summary>Texte du CV envoyé</summary><pre>" + esc(a.cvText) + "</pre></details>" : "") +
+      (a.letterText ? "<details><summary>Texte de la lettre envoyée</summary><pre>" + esc(a.letterText) + "</pre></details>" : "");
+    setRing($("#d-ring-g"), a.scores ? a.scores.global : null);
+    setRing($("#d-ring-c"), a.scores ? a.scores.cv : null);
+    setRing($("#d-ring-l"), a.scores ? a.scores.letter : null);
+    dlg.showModal();
+  }
+  $("#dlg-save").addEventListener("click", () => {
+    ATS.store.upsert({ id: state.dialogId, status: $("#d-status").value, appliedAt: $("#d-date").value, notes: $("#d-notes").value });
+    dlg.close(); renderHistory();
+  });
+  $("#dlg-delete").addEventListener("click", () => {
+    const a = ATS.store.get(state.dialogId);
+    const btn = $("#dlg-delete");
+    if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.textContent = "Confirmer la suppression ?"; return; }
+    ATS.store.remove(state.dialogId);
+    btn.dataset.confirm = ""; btn.textContent = "Supprimer";
+    dlg.close(); renderHistory();
+    if (state.editingId === (a && a.id)) state.editingId = null;
+  });
+  dlg.addEventListener("close", () => { const b = $("#dlg-delete"); b.dataset.confirm = ""; b.textContent = "Supprimer"; });
+  $("#dlg-reload").addEventListener("click", () => {
+    const a = ATS.store.get(state.dialogId);
+    if (!a) return;
+    $("#company").value = a.company; $("#title").value = a.title; $("#url").value = a.url || ""; jd.value = a.jdText || "";
+    ["cv", "letter"].forEach((k) => {
+      const text = k === "cv" ? a.cvText : a.letterText;
+      state.docs[k] = null;
+      togglePaste(k, !!text);
+      $("#paste-" + k).value = text || "";
+      renderDocStatus(k);
+    });
+    state.ignored = new Set(a.ignored || []);
+    state.editingId = a.id;
+    statusSel.value = a.status; $("#save-date").value = a.appliedAt || ""; $("#save-notes").value = a.notes || "";
+    saveDraft();
+    dlg.close();
+    showView("analyze");
+    runAnalysis(true);
+  });
+
+  /* ---------- Export / import ---------- */
+  $("#btn-export").addEventListener("click", () => {
+    const blob = new Blob([ATS.store.exportJSON()], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "mes-candidatures-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  $("#import-file").addEventListener("change", async (e) => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    try {
+      const { added, updated } = ATS.store.importJSON(await f.text());
+      renderHistory();
+      toast(added + " candidature(s) ajoutée(s), " + updated + " mise(s) à jour.");
+    } catch (err) { toast("Import impossible : " + err.message); }
+  });
+  function toast(msg) {
+    const t = document.createElement("div");
+    t.className = "notice warn"; t.textContent = msg; t.style.cssText = "position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:50;max-width:90vw";
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+  }
+
+  /* ---------- Réinitialiser ---------- */
+  $("#btn-reset").addEventListener("click", () => {
+    ["#company", "#title", "#url", "#save-notes"].forEach((s) => ($(s).value = ""));
+    jd.value = ""; setJdStatus("Formats acceptés : texte collé, PDF, DOCX, TXT, MD, HTML, RTF.");
+    ["cv", "letter"].forEach((k) => {
+      state.docs[k] = null; $("#paste-" + k).value = ""; togglePaste(k, false);
+    });
+    state.result = null; state.ignored = new Set(); state.editingId = null;
+    $("#results").hidden = true; $("#analyze-error").textContent = ""; $("#save-date").value = "";
+    saveDraft();
+  });
+
+  /* ---------- Démarrage ---------- */
+  if (!ATS.store.isAvailable()) $("#storage-warning").hidden = false;
+  updateCount();
+})();

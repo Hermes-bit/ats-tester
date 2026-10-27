@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ATS Tester – CV et lettre de motivation</title>
+  <meta name="description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS), et suis tes candidatures.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232F3B52'/%3E%3Cpath d='M18 34l9 9 19-21' stroke='%23C9A26B' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14"/><path d="M18 34l9 9 19-21"/></svg>
+        </span>
+        <div>
+          <div class="brand-name">ATS Tester</div>
+          <div class="brand-tag">Ton CV et ta lettre passés au filtre, avant le recruteur</div>
+        </div>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button class="tab is-active" role="tab" aria-selected="true" data-view="analyze">Analyser</button>
+        <button class="tab" role="tab" aria-selected="false" data-view="history">Mes candidatures <span class="badge" id="history-count">0</span></button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ================= ANALYSER ================= -->
+    <section id="view-analyze" class="view">
+      <div id="storage-warning" class="notice warn" hidden>
+        Ton navigateur bloque la sauvegarde locale (navigation privée ?). Les candidatures enregistrées seront perdues à la fermeture de l'onglet : pense à les exporter.
+      </div>
+
+      <div class="grid-2">
+        <article class="card">
+          <h2 class="card-title"><span class="step">1</span> L'offre d'emploi</h2>
+          <div class="fields">
+            <label class="field">
+              <span>Entreprise</span>
+              <input id="company" type="text" placeholder="Ex. GEOFIT" autocomplete="organization">
+            </label>
+            <label class="field">
+              <span>Intitulé exact du poste</span>
+              <input id="title" type="text" placeholder="Ex. Géomaticien / Développeur SIG">
+            </label>
+            <label class="field field-wide">
+              <span>Lien de l'annonce <em>(facultatif)</em></span>
+              <input id="url" type="url" placeholder="https://…">
+            </label>
+          </div>
+
+          <div class="field-head">
+            <span class="label">Fiche de poste</span>
+            <label class="btn btn-small btn-ghost file-btn">
+              Importer un fichier
+              <input id="jd-file" type="file" hidden>
+            </label>
+          </div>
+          <div class="drop drop-text" id="jd-drop">
+            <textarea id="jd" rows="12" placeholder="Colle ici le texte de l'annonce (missions, profil, outils…), ou glisse un fichier PDF, DOCX ou TXT."></textarea>
+          </div>
+          <p class="hint" id="jd-status">Formats acceptés : texte collé, PDF, DOCX, TXT, MD, HTML, RTF.</p>
+        </article>
+
+        <article class="card">
+          <h2 class="card-title"><span class="step">2</span> Tes documents</h2>
+
+          <div class="doc" data-kind="cv">
+            <div class="doc-head">
+              <span class="label">CV</span>
+              <button class="link" data-toggle-paste="cv">Coller le texte à la place</button>
+            </div>
+            <div class="drop drop-file" id="drop-cv" tabindex="0" role="button" aria-label="Importer le CV">
+              <input type="file" id="file-cv" hidden>
+              <div class="drop-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9 14l3-3 3 3"/></svg>
+              </div>
+              <div class="drop-text-main">Glisse ton CV ici ou <u>clique pour choisir</u></div>
+              <div class="drop-text-sub">PDF ou DOCX recommandés</div>
+            </div>
+            <textarea class="paste" id="paste-cv" rows="8" placeholder="Colle le texte de ton CV…" hidden></textarea>
+            <div class="doc-status" id="status-cv"></div>
+          </div>
+
+          <div class="doc" data-kind="letter">
+            <div class="doc-head">
+              <span class="label">Lettre de motivation <em>(facultatif)</em></span>
+              <button class="link" data-toggle-paste="letter">Coller le texte à la place</button>
+            </div>
+            <div class="drop drop-file" id="drop-letter" tabindex="0" role="button" aria-label="Importer la lettre de motivation">
+              <input type="file" id="file-letter" hidden>
+              <div class="drop-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg>
+              </div>
+              <div class="drop-text-main">Glisse ta lettre ici ou <u>clique pour choisir</u></div>
+              <div class="drop-text-sub">PDF, DOCX ou TXT</div>
+            </div>
+            <textarea class="paste" id="paste-letter" rows="8" placeholder="Colle le texte de ta lettre…" hidden></textarea>
+            <div class="doc-status" id="status-letter"></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="actions">
+        <button id="btn-analyze" class="btn btn-primary btn-large">Analyser ma candidature</button>
+        <button id="btn-reset" class="btn btn-ghost">Tout effacer</button>
+        <span class="error" id="analyze-error" role="alert"></span>
+      </div>
+
+      <!-- ================= RÉSULTATS ================= -->
+      <section id="results" hidden>
+        <article class="card summary">
+          <div class="summary-main">
+            <div class="ring ring-xl" id="ring-global"><span></span></div>
+            <div>
+              <div class="eyebrow">Indice de compatibilité ATS</div>
+              <h2 class="verdict" id="verdict"></h2>
+              <p class="muted" id="summary-line"></p>
+            </div>
+          </div>
+          <div class="summary-side">
+            <div class="mini">
+              <div class="ring" id="ring-cv"><span></span></div>
+              <div><b>CV</b><div class="muted small" id="cv-sub"></div></div>
+            </div>
+            <div class="mini">
+              <div class="ring" id="ring-letter"><span></span></div>
+              <div><b>Lettre</b><div class="muted small" id="letter-sub"></div></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 class="card-title">Recommandations</h2>
+          <ul class="recos" id="recos"></ul>
+        </article>
+
+        <article class="card">
+          <div class="card-title-row">
+            <h2 class="card-title">Mots-clés de l'offre</h2>
+            <span class="muted small">Clique sur une ligne pour ignorer un mot-clé non pertinent.</span>
+          </div>
+          <div class="table-wrap">
+            <table class="kw-table" id="kw-table">
+              <thead><tr><th>Mot-clé</th><th>Dans l'offre</th><th>CV</th><th>Lettre</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 class="card-title">Vérifications ATS</h2>
+          <div class="grid-2 checks-grid">
+            <div><h3 class="sub">CV</h3><ul class="checks" id="checks-cv"></ul></div>
+            <div><h3 class="sub">Lettre</h3><ul class="checks" id="checks-letter"></ul></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-title-row">
+            <h2 class="card-title">Ce que voit l'ATS</h2>
+            <div class="seg" role="tablist">
+              <button class="seg-btn is-active" data-raw="cv">CV</button>
+              <button class="seg-btn" data-raw="letter">Lettre</button>
+            </div>
+          </div>
+          <p class="muted small">Voici le texte brut extrait de ton document, dans l'ordre où un logiciel le lit. Les mots-clés trouvés sont surlignés. S'il manque des informations ou si l'ordre est incohérent, l'ATS les perdra aussi.</p>
+          <pre class="raw" id="raw-text"></pre>
+        </article>
+
+        <article class="card save-card">
+          <h2 class="card-title">Enregistrer cette candidature</h2>
+          <div class="fields">
+            <label class="field">
+              <span>Statut</span>
+              <select id="save-status"></select>
+            </label>
+            <label class="field">
+              <span>Date de candidature</span>
+              <input id="save-date" type="date">
+            </label>
+            <label class="field field-wide">
+              <span>Notes <em>(contact, relance, salaire…)</em></span>
+              <textarea id="save-notes" rows="3"></textarea>
+            </label>
+          </div>
+          <div class="actions actions-tight">
+            <button id="btn-save" class="btn btn-primary">Enregistrer dans Mes candidatures</button>
+            <span class="ok-msg" id="save-msg" role="status"></span>
+          </div>
+        </article>
+      </section>
+    </section>
+
+    <!-- ================= HISTORIQUE ================= -->
+    <section id="view-history" class="view" hidden>
+      <div class="stats" id="stats"></div>
+      <article class="card">
+        <div class="toolbar">
+          <input id="search" type="search" placeholder="Rechercher une entreprise, un poste…">
+          <select id="filter-status"><option value="">Tous les statuts</option></select>
+          <div class="toolbar-right">
+            <button id="btn-export" class="btn btn-ghost btn-small">Exporter (JSON)</button>
+            <label class="btn btn-ghost btn-small file-btn">Importer<input id="import-file" type="file" accept=".json,application/json" hidden></label>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="apps" id="apps">
+            <thead><tr><th>Date</th><th>Entreprise</th><th>Poste</th><th>Statut</th><th>CV</th><th>Lettre</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="empty" id="empty" hidden>
+          <p><b>Aucune candidature enregistrée pour l'instant.</b></p>
+          <p class="muted">Analyse une offre, puis clique sur « Enregistrer dans Mes candidatures ».</p>
+        </div>
+        <p class="hint">Tes candidatures sont gardées dans ce navigateur, sur cet appareil. Exporte-les régulièrement pour en garder une copie.</p>
+      </article>
+    </section>
+  </main>
+
+  <dialog id="dlg">
+    <form method="dialog" class="dlg-inner">
+      <header class="dlg-head">
+        <div>
+          <div class="eyebrow" id="dlg-date"></div>
+          <h2 id="dlg-title"></h2>
+          <div class="muted" id="dlg-company"></div>
+        </div>
+        <button class="icon-btn" value="close" aria-label="Fermer">✕</button>
+      </header>
+      <div class="dlg-body" id="dlg-body"></div>
+      <footer class="dlg-foot">
+        <button type="button" class="btn btn-ghost btn-danger" id="dlg-delete">Supprimer</button>
+        <div class="spacer"></div>
+        <button type="button" class="btn btn-ghost" id="dlg-reload">Rouvrir dans l'analyseur</button>
+        <button type="button" class="btn btn-primary" id="dlg-save">Enregistrer</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <span>🔒 Tout reste dans ton navigateur : aucun fichier n'est envoyé sur un serveur.</span>
+      <span>Simulation indicative : chaque ATS a ses propres règles.</span>
+    </div>
+  </footer>
+
+  <script src="assets/vendor/pdf.min.js"></script>
+  <script src="assets/vendor/mammoth.browser.min.js"></script>
+  <script src="assets/js/keywords.js"></script>
+  <script src="assets/js/extract.js"></script>
+  <script src="assets/js/analyzer.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
