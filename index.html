@@ -5,21 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ATS Tester – CV et lettre de motivation</title>
   <meta name="description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS), et suis tes candidatures.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232F3B52'/%3E%3Cpath d='M18 34l9 9 19-21' stroke='%23C9A26B' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#131C3A">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ATS Tester – le messager de ta candidature">
+  <meta property="og:description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS). Gratuit, et tout reste dans ton navigateur.">
+  <meta property="og:image" content="https://hermes-bit.github.io/ats-tester/assets/img/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/vendor/fonts/cormorant-garamond-latin-700.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
   <header class="topbar">
     <div class="wrap topbar-inner">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14"/><path d="M18 34l9 9 19-21"/></svg>
-        </span>
+      <a class="brand" href="./" aria-label="ATS Tester, accueil">
+        <img class="brand-mark" src="assets/img/logo.svg" width="46" height="46" alt="">
         <div>
           <div class="brand-name">ATS Tester</div>
-          <div class="brand-tag">Ton CV et ta lettre passés au filtre, avant le recruteur</div>
+          <div class="brand-tag">Le messager de ta candidature</div>
         </div>
-      </div>
+      </a>
       <nav class="tabs" role="tablist">
         <button class="tab is-active" role="tab" aria-selected="true" data-view="analyze">Analyser</button>
         <button class="tab" role="tab" aria-selected="false" data-view="history">Mes candidatures <span class="badge" id="history-count">0</span></button>
@@ -30,6 +37,22 @@
   <main class="wrap">
     <!-- ================= ANALYSER ================= -->
     <section id="view-analyze" class="view">
+      <section class="hero">
+        <div class="hero-text">
+          <div class="eyebrow">Simulateur d'ATS · gratuit · 100 % dans ton navigateur</div>
+          <h1>Fais passer ta candidature <span class="accent">avant</span> le filtre des recruteurs.</h1>
+          <p class="lead">Comme Hermès portait les messages des dieux, ton CV et ta lettre doivent arriver jusqu'au recruteur. Compare-les à la fiche de poste comme le ferait un logiciel de recrutement, corrige ce qui bloque, puis envoie ta candidature l'esprit tranquille.</p>
+          <ul class="hero-points">
+            <li>Mots-clés, lisibilité et structure analysés</li>
+            <li>PDF, DOCX ou texte collé</li>
+            <li>Prompt prêt pour ton IA générative</li>
+          </ul>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="coin"><img src="assets/img/logo.svg" width="220" height="220" alt=""></div>
+        </div>
+      </section>
+
       <div id="storage-warning" class="notice warn" hidden>
         Ton navigateur bloque la sauvegarde locale (navigation privée ?). Les candidatures enregistrées seront perdues à la fermeture de l'onglet : pense à les exporter.
       </div>
@@ -65,7 +88,7 @@
           <p class="hint" id="jd-status">Formats acceptés : texte collé, PDF, DOCX, TXT, MD, HTML, RTF.</p>
         </article>
 
-        <article class="card">
+        <article class="card card-docs">
           <h2 class="card-title"><span class="step">2</span> Tes documents</h2>
 
           <div class="doc" data-kind="cv">
@@ -101,6 +124,16 @@
             <textarea class="paste" id="paste-letter" rows="8" placeholder="Colle le texte de ta lettre…" hidden></textarea>
             <div class="doc-status" id="status-letter"></div>
           </div>
+
+          <aside class="tips">
+            <div class="tips-title">Les conseils du messager</div>
+            <ul>
+              <li>Exporte ton CV en <b>PDF texte</b> depuis Word ou Google Docs, pas en image.</li>
+              <li>Reprends l'<b>intitulé exact</b> du poste sous ton nom.</li>
+              <li>Garde des rubriques classiques : Expériences, Formation, Compétences.</li>
+            </ul>
+            <p>🔒 Tes fichiers sont lus dans ton navigateur et ne sont jamais envoyés.</p>
+          </aside>
         </article>
       </div>
 
@@ -283,8 +316,22 @@
 
   <footer class="footer">
     <div class="wrap footer-inner">
-      <span>🔒 Tout reste dans ton navigateur : aucun fichier n'est envoyé sur un serveur.</span>
-      <span>Simulation indicative : chaque ATS a ses propres règles.</span>
+      <div class="footer-brand">
+        <img src="assets/img/logo.svg" width="38" height="38" alt="">
+        <div>
+          <div class="footer-name">ATS Tester</div>
+          <div class="footer-tag">Le messager de ta candidature</div>
+        </div>
+      </div>
+      <ul class="footer-notes">
+        <li>Tout reste dans ton navigateur : aucun fichier n'est envoyé sur un serveur.</li>
+        <li>Simulation indicative : chaque ATS a ses propres règles.</li>
+      </ul>
+      <div class="footer-credit">
+        Réalisé par <b>Hermès BARRY</b><br>
+        <a href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">GitHub</a> ·
+        <a href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
     </div>
   </footer>
 

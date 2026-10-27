@@ -1,4 +1,8 @@
+<p align="center"><img src="assets/img/logo.svg" width="120" alt="Logo ATS Tester : pièce grecque frappée d'une coche ailée"></p>
+
 # ATS Tester
+
+*Le messager de ta candidature.*
 
 **Teste ton CV et ta lettre de motivation face à une fiche de poste, comme le ferait un logiciel de recrutement (ATS), avant de les envoyer.**
 
@@ -29,6 +33,15 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 - **Export / import JSON** pour sauvegarder tes candidatures ou les transférer sur un autre ordinateur.
 - **Confidentialité** : tout est traité **dans le navigateur**. Aucun fichier n'est envoyé sur un serveur.
 - Interface responsive (ordinateur et mobile), avec un mode sombre automatique.
+
+## Identité visuelle
+
+Le design s'inspire d'**Hermès**, le messager des dieux grecs : ton CV et ta lettre sont des messages qui doivent arriver jusqu'au recruteur.
+
+- **Logo** : une pièce de monnaie grecque antique (bord perlé, bleu nuit et or) frappée d'une **coche ailée**. L'aile rappelle les sandales ailées d'Hermès, la coche une candidature qui passe le filtre.
+- **Couleurs** : bleu nuit `#131C3A`, or antique `#C9A24F`, fond marbre `#F7F4EE`. Un mode sombre s'active automatiquement.
+- **Typographie** : *Cormorant Garamond* pour les titres, *Inter* pour le texte (hébergées dans le dépôt).
+- **Détails** : frise grecque (méandre), synthèse des scores sur une tablette bleu nuit, image de partage pour les réseaux sociaux.
 
 ## Utilisation
 
@@ -82,7 +95,8 @@ ats-tester/
 │   ├── js/prompt.js           # Prompt pour une IA générative à partir des résultats
 │   ├── js/storage.js          # Sauvegarde locale des candidatures + export / import
 │   ├── js/app.js              # Interface
-│   └── vendor/                # pdf.js 3.11.174 et mammoth 1.8.0 (inclus, sans CDN)
+│   ├── img/                   # Logo, favicon, icône iPhone, image de partage
+│   └── vendor/                # pdf.js 3.11.174, mammoth 1.8.0 et polices (inclus, sans CDN)
 ├── docs/                      # Captures d'écran
 └── .github/workflows/deploy.yml
 ```
@@ -117,7 +131,7 @@ Les termes absents du dictionnaire mais répétés dans l'offre sont aussi déte
 
 ## Technologies
 
-HTML, CSS et JavaScript sans framework ni étape de compilation · [pdf.js](https://mozilla.github.io/pdf.js/) (Apache 2.0) · [mammoth.js](https://github.com/mwilliamson/mammoth.js) (BSD-2) · GitHub Actions et GitHub Pages.
+HTML, CSS et JavaScript sans framework ni étape de compilation · [pdf.js](https://mozilla.github.io/pdf.js/) (Apache 2.0) · [mammoth.js](https://github.com/mwilliamson/mammoth.js) (BSD-2) · polices [Inter](https://rsms.me/inter/) et [Cormorant Garamond](https://github.com/CatharsisFonts/Cormorant) (SIL OFL 1.1) · GitHub Actions et GitHub Pages.
 
 ## Auteur
 
