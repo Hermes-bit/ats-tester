@@ -5,31 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ATS Tester – CV et lettre de motivation</title>
   <meta name="description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS), et suis tes candidatures.">
-  <meta name="theme-color" content="#131C3A">
+  <meta name="theme-color" content="#060B0D">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="ATS Tester – le messager de ta candidature">
+  <meta property="og:title" content="ATS Tester – passe le filtre des recruteurs avant d'envoyer">
   <meta property="og:description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS). Gratuit, et tout reste dans ton navigateur.">
   <meta property="og:image" content="https://hermes-bit.github.io/ats-tester/assets/img/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
   <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/vendor/fonts/cormorant-garamond-latin-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/vendor/fonts/cormorant-garamond-latin-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/img/hermes-barry.webp" as="image" type="image/webp">
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
   <header class="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="./" aria-label="ATS Tester, accueil">
-        <img class="brand-mark" src="assets/img/logo.svg" width="46" height="46" alt="">
+      <a class="brand" href="#top" data-goto="top" aria-label="ATS Tester, retour en haut">
+        <img class="brand-mark" src="assets/img/logo.svg" width="42" height="42" alt="">
         <div>
           <div class="brand-name">ATS Tester</div>
           <div class="brand-tag">Le messager de ta candidature</div>
         </div>
       </a>
-      <nav class="tabs" role="tablist">
-        <button class="tab is-active" role="tab" aria-selected="true" data-view="analyze">Analyser</button>
-        <button class="tab" role="tab" aria-selected="false" data-view="history">Mes candidatures <span class="badge" id="history-count">0</span></button>
+      <nav class="nav" aria-label="Navigation principale">
+        <a class="nav-link nav-anchor" href="#fonctionnalites" data-goto="fonctionnalites">Fonctionnalités</a>
+        <a class="nav-link nav-anchor" href="#methode" data-goto="methode">Méthode</a>
+        <button class="nav-link tab" data-view="history" aria-selected="false">Mes candidatures <span class="badge" id="history-count">0</span></button>
+        <a class="btn btn-neon btn-small" href="#analyser" data-goto="analyser">Tester mon CV <span class="arrow" aria-hidden="true">↗</span></a>
       </nav>
     </div>
   </header>
@@ -37,21 +40,150 @@
   <main class="wrap">
     <!-- ================= ANALYSER ================= -->
     <section id="view-analyze" class="view">
-      <section class="hero">
+
+      <!-- Accroche publicitaire -->
+      <section class="hero" id="top">
         <div class="hero-text">
-          <div class="eyebrow">Simulateur d'ATS · gratuit · 100 % dans ton navigateur</div>
-          <h1>Fais passer ta candidature <span class="accent">avant</span> le filtre des recruteurs.</h1>
-          <p class="lead">Comme Hermès portait les messages des dieux, ton CV et ta lettre doivent arriver jusqu'au recruteur. Compare-les à la fiche de poste comme le ferait un logiciel de recrutement, corrige ce qui bloque, puis envoie ta candidature l'esprit tranquille.</p>
-          <ul class="hero-points">
-            <li>Mots-clés, lisibilité et structure analysés</li>
-            <li>PDF, DOCX ou texte collé</li>
-            <li>Prompt prêt pour ton IA générative</li>
+          <div class="kicker">Créé par Hermès BARRY · géomaticien</div>
+          <h1>Passe le filtre<br>des recruteurs<br><span class="grad-text">avant d'envoyer</span></h1>
+          <p class="lead">ATS Tester lit ton CV et ta lettre comme un logiciel de recrutement : mots-clés de l'offre, lisibilité, structure. Puis il te prépare un prompt pour les perfectionner avec ton IA, sans toucher à ta mise en page.</p>
+          <div class="hero-cta">
+            <a class="btn btn-neon btn-large" href="#analyser" data-goto="analyser">Tester mon CV gratuitement <span class="arrow" aria-hidden="true">↗</span></a>
+            <a class="btn btn-ghost btn-large" href="#methode" data-goto="methode">Comment ça marche</a>
+          </div>
+          <ul class="trust">
+            <li>Gratuit</li>
+            <li>Sans inscription</li>
+            <li>Aucun fichier envoyé</li>
           </ul>
         </div>
-        <div class="hero-art" aria-hidden="true">
-          <div class="coin"><img src="assets/img/logo.svg" width="220" height="220" alt=""></div>
+        <div class="hero-visual">
+          <div class="halo" aria-hidden="true"><span></span><span></span><span></span></div>
+          <img class="portrait" src="assets/img/hermes-barry.webp" width="900" height="675" alt="Portrait d'Hermès BARRY, créateur d'ATS Tester">
+          <div class="float-chip chip-score" aria-hidden="true">
+            <div class="chip-ring"><span>80</span></div>
+            <div><b>Indice ATS</b><small>Exemple d'analyse</small></div>
+          </div>
+          <div class="float-chip chip-ai" aria-hidden="true"><span class="chip-dot"></span><div><b>Prompt IA prêt</b><small>ChatGPT, Claude, Gemini…</small></div></div>
+          <div class="float-chip chip-lock" aria-hidden="true"><span class="chip-ico">🔒</span><div><b>100 % local</b><small>Rien ne quitte ton navigateur</small></div></div>
+          <div class="signature"><b>Hermès BARRY</b><span>Créateur d'ATS Tester</span></div>
         </div>
       </section>
+
+      <!-- Fonctionnalités -->
+      <section class="block" id="fonctionnalites">
+        <div class="block-head">
+          <div class="kicker">Ce que fait ATS Tester</div>
+          <h2 class="block-title">Trois outils pour une candidature<br><span class="grad-text">qui arrive jusqu'au recruteur</span></h2>
+        </div>
+        <div class="features">
+          <article class="feature">
+            <div class="feature-art art-blue" aria-hidden="true">
+              <div class="mock-chips"><span class="ok">✓ QGIS</span><span class="ok">✓ Python</span><span class="ko">✗ FME</span><span class="ok">✓ PostGIS</span><span class="ko">✗ ArcGIS</span></div>
+            </div>
+            <div class="feature-body">
+              <span class="pill-tag">Mots-clés</span>
+              <h3>Analyse de l'offre</h3>
+              <p>Compétences, logiciels, méthodes et savoir-être repérés dans la fiche de poste, puis cherchés dans ton CV et ta lettre, synonymes compris.</p>
+            </div>
+          </article>
+          <article class="feature">
+            <div class="feature-art art-teal" aria-hidden="true">
+              <ul class="mock-checks"><li class="ok">Texte lisible</li><li class="ok">Rubriques standards</li><li class="warn">Intitulé du poste</li><li class="ok">Coordonnées</li></ul>
+            </div>
+            <div class="feature-body">
+              <span class="pill-tag">Vérifications</span>
+              <h3>Contrôles ATS</h3>
+              <p>PDF scanné, ligatures « fi », rubriques, dates, longueur, formule de politesse : ce qui fait rejeter un dossier avant même sa lecture.</p>
+            </div>
+          </article>
+          <article class="feature">
+            <div class="feature-art art-green" aria-hidden="true">
+              <div class="mock-prompt"><i></i><i></i><i></i><i class="short"></i><b>Copier le prompt ↗</b></div>
+            </div>
+            <div class="feature-body">
+              <span class="pill-tag">IA générative</span>
+              <h3>Prompt sur mesure</h3>
+              <p>Un prompt prêt à coller dans ton IA : retouches précises qui gardent ta charte graphique, sans jamais inventer une compétence.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Chiffres et compatibilité -->
+      <section class="block panels">
+        <article class="panel">
+          <div class="panel-title">Ce qui est vérifié</div>
+          <ul class="spec-list">
+            <li><span class="spec-ico">⌕</span>Mots-clés de l'offre</li>
+            <li><span class="spec-ico">▤</span>Lisibilité du PDF</li>
+            <li><span class="spec-ico">☰</span>Rubriques standards</li>
+            <li><span class="spec-ico">◎</span>Intitulé exact du poste</li>
+            <li><span class="spec-ico">✆</span>Coordonnées</li>
+            <li><span class="spec-ico">ﬁ</span>Ligatures typographiques</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <div class="panel-title">En chiffres</div>
+          <div class="metrics">
+            <div class="metric"><b>146</b><span>compétences reconnues</span></div>
+            <div class="metric"><b>10</b><span>contrôles du CV</span></div>
+            <div class="metric"><b>8</b><span>contrôles de la lettre</span></div>
+            <div class="metric"><b>0</b><span>fichier envoyé</span></div>
+          </div>
+        </article>
+        <article class="panel">
+          <div class="panel-title">Compatible avec</div>
+          <div class="tools">
+            <span class="tool"><b>PDF</b>Document</span>
+            <span class="tool"><b>DOCX</b>Word</span>
+            <span class="tool"><b>TXT</b>Texte</span>
+            <span class="tool"><b>GPT</b>ChatGPT</span>
+            <span class="tool"><b>CL</b>Claude</span>
+            <span class="tool"><b>GE</b>Gemini</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- Méthode -->
+      <section class="block" id="methode">
+        <div class="block-head">
+          <div class="kicker">Méthode</div>
+          <h2 class="block-title">Cinq étapes, <span class="grad-text">dix minutes</span></h2>
+        </div>
+        <ol class="workflow">
+          <li><span class="wf-num">01</span><b>Colle l'offre</b><p>Texte de l'annonce, ou fichier PDF, DOCX, TXT.</p></li>
+          <li><span class="wf-num">02</span><b>Importe ton CV</b><p>Et ta lettre de motivation si tu en as une.</p></li>
+          <li><span class="wf-num">03</span><b>Analyse</b><p>Scores, mots-clés manquants et recommandations.</p></li>
+          <li><span class="wf-num">04</span><b>Perfectionne</b><p>Copie le prompt dans ton IA et applique ses retouches.</p></li>
+          <li><span class="wf-num">05</span><b>Suis tes envois</b><p>Enregistre chaque candidature et son statut.</p></li>
+        </ol>
+      </section>
+
+      <!-- Créateur -->
+      <section class="block creator">
+        <img class="creator-photo" src="assets/img/hermes-barry.webp" width="900" height="675" alt="">
+        <div class="creator-text">
+          <div class="kicker">Le créateur</div>
+          <h2 class="block-title">Hermès BARRY</h2>
+          <p>Géomaticien, j'ai conçu ATS Tester pour aider chaque candidat à passer le premier filtre des recrutements. L'outil est gratuit, open source, et tout se passe dans ton navigateur.</p>
+          <div class="creator-links">
+            <a class="btn btn-ghost btn-small" href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn ↗</a>
+            <a class="btn btn-ghost btn-small" href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">Code source ↗</a>
+          </div>
+        </div>
+        <div class="creator-cta">
+          <b>Prêt à passer le filtre ?</b>
+          <a class="btn btn-neon" href="#analyser" data-goto="analyser">Lancer l'analyse <span class="arrow" aria-hidden="true">↗</span></a>
+        </div>
+      </section>
+
+      <!-- Outil -->
+      <div class="block-head tool-head" id="analyser">
+        <div class="kicker">L'analyseur</div>
+        <h2 class="block-title">Teste ta candidature</h2>
+        <p class="muted">Renseigne l'offre, ajoute ton CV, puis lance l'analyse. Rien n'est envoyé sur un serveur.</p>
+      </div>
 
       <div id="storage-warning" class="notice warn" hidden>
         Ton navigateur bloque la sauvegarde locale (navigation privée ?). Les candidatures enregistrées seront perdues à la fermeture de l'onglet : pense à les exporter.
@@ -59,15 +191,18 @@
 
       <div class="grid-2">
         <article class="card">
-          <h2 class="card-title"><span class="step">1</span> L'offre d'emploi</h2>
+          <div class="card-title-row">
+            <h2 class="card-title"><span class="step">1</span> L'offre d'emploi</h2>
+            <button class="link" id="btn-new-offer" type="button">↺ Nouvelle offre</button>
+          </div>
           <div class="fields">
             <label class="field">
               <span>Entreprise</span>
-              <input id="company" type="text" placeholder="Ex. GEOFIT" autocomplete="organization">
+              <input id="company" type="text" placeholder="Nom de l'entreprise" autocomplete="off">
             </label>
             <label class="field">
               <span>Intitulé exact du poste</span>
-              <input id="title" type="text" placeholder="Ex. Géomaticien / Développeur SIG">
+              <input id="title" type="text" placeholder="Tel qu'écrit dans l'annonce" autocomplete="off">
             </label>
             <label class="field field-wide">
               <span>Lien de l'annonce <em>(facultatif)</em></span>
@@ -264,6 +399,14 @@
             <span class="ok-msg" id="save-msg" role="status"></span>
           </div>
         </article>
+
+        <div class="next-offer">
+          <div>
+            <b>Une autre offre à tester ?</b>
+            <span class="muted">L'offre, la lettre et les résultats sont effacés. Ton CV reste chargé.</span>
+          </div>
+          <button id="btn-next-offer" class="btn btn-neon">Analyser une nouvelle offre <span class="arrow" aria-hidden="true">↺</span></button>
+        </div>
       </section>
     </section>
 
@@ -317,7 +460,7 @@
   <footer class="footer">
     <div class="wrap footer-inner">
       <div class="footer-brand">
-        <img src="assets/img/logo.svg" width="38" height="38" alt="">
+        <img src="assets/img/logo.svg" width="36" height="36" alt="">
         <div>
           <div class="footer-name">ATS Tester</div>
           <div class="footer-tag">Le messager de ta candidature</div>
@@ -327,10 +470,9 @@
         <li>Tout reste dans ton navigateur : aucun fichier n'est envoyé sur un serveur.</li>
         <li>Simulation indicative : chaque ATS a ses propres règles.</li>
       </ul>
-      <div class="footer-credit">
-        Réalisé par <b>Hermès BARRY</b><br>
-        <a href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">GitHub</a> ·
-        <a href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn</a>
+      <div class="footer-links">
+        <span>© <span id="year">2026</span> ATS Tester · Hermès BARRY</span>
+        <span><a href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">GitHub</a></span>
       </div>
     </div>
   </footer>

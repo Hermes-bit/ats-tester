@@ -24,6 +24,13 @@
     window.scrollTo({ top: 0 });
   }
   $$(".tab").forEach((t) => t.addEventListener("click", () => showView(t.dataset.view)));
+  // Liens de la page (accroche, méthode, analyseur) : reviennent sur la vue Analyser si besoin
+  $$("[data-goto]").forEach((a) => a.addEventListener("click", (e) => {
+    e.preventDefault();
+    if ($("#view-analyze").hidden) showView("analyze");
+    const target = document.getElementById(a.dataset.goto);
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
 
   /* ---------- Fiche de poste ---------- */
   const jd = $("#jd");
@@ -228,7 +235,7 @@
 
     // Formulaire d'enregistrement
     if (!$("#save-date").value) $("#save-date").value = new Date().toISOString().slice(0, 10);
-    $("#btn-save").textContent = state.editingId ? "Mettre à jour la candidature" : "Enregistrer dans Mes candidatures";
+    $("#btn-save").textContent = editingId() ? "Mettre à jour la candidature" : "Enregistrer dans Mes candidatures";
     $("#save-msg").textContent = "";
   }
 
@@ -313,6 +320,17 @@
   ATS.store.STATUSES.forEach((s) => { statusSel.add(new Option(s, s)); filterSel.add(new Option(s, s)); });
   statusSel.value = "Envoyée";
 
+  // Candidature en cours de modification, seulement si l'offre affichée est toujours la même :
+  // une autre offre saisie entre-temps donne une nouvelle candidature, pas une mise à jour
+  function editingId() {
+    if (!state.editingId) return null;
+    const prev = ATS.store.get(state.editingId);
+    const same = prev && ATS.norm(prev.company) === ATS.norm($("#company").value) &&
+      ATS.norm(prev.title) === ATS.norm($("#title").value.trim() || "Poste sans intitulé");
+    if (!same) state.editingId = null;
+    return state.editingId;
+  }
+
   $("#btn-save").addEventListener("click", () => {
     const r = state.result;
     if (!r) return;
@@ -320,7 +338,7 @@
     if (!company) { $("#save-msg").innerHTML = '<span class="error">Indique le nom de l\'entreprise (étape 1).</span>'; $("#company").focus(); return; }
     const cv = getDoc("cv"), letter = getDoc("letter");
     const app = {
-      id: state.editingId || undefined,
+      id: editingId() || undefined,
       company, title: title || "Poste sans intitulé", url: $("#url").value.trim(),
       status: statusSel.value, appliedAt: $("#save-date").value, notes: $("#save-notes").value,
       jdText: jd.value, cvText: cv ? cv.text : "", cvName: cv ? cv.name : "", letterText: letter ? letter.text : "", letterName: letter ? letter.name : "",
@@ -460,18 +478,28 @@
   }
 
   /* ---------- Réinitialiser ---------- */
-  $("#btn-reset").addEventListener("click", () => {
+  function resetForm(keepCv) {
     ["#company", "#title", "#url", "#save-notes"].forEach((s) => ($(s).value = ""));
     jd.value = ""; setJdStatus("Formats acceptés : texte collé, PDF, DOCX, TXT, MD, HTML, RTF.");
-    ["cv", "letter"].forEach((k) => {
+    (keepCv ? ["letter"] : ["cv", "letter"]).forEach((k) => {
       state.docs[k] = null; $("#paste-" + k).value = ""; togglePaste(k, false);
     });
     state.result = null; state.ignored = new Set(); state.editingId = null;
-    $("#results").hidden = true; $("#analyze-error").textContent = ""; $("#save-date").value = "";
-    saveDraft();
-  });
+    $("#results").hidden = true; $("#analyze-error").textContent = ""; $("#save-date").value = ""; statusSel.value = "Envoyée";
+    ATS.store.clearDraft();
+  }
+  $("#btn-reset").addEventListener("click", () => resetForm(false));
+  // Nouvelle offre : garde le CV (souvent le même d'une candidature à l'autre), efface le reste
+  function newOffer() {
+    resetForm(true);
+    $("#analyser").scrollIntoView({ behavior: "smooth", block: "start" });
+    $("#company").focus({ preventScroll: true });
+  }
+  $("#btn-new-offer").addEventListener("click", newOffer);
+  $("#btn-next-offer").addEventListener("click", newOffer);
 
   /* ---------- Démarrage ---------- */
   if (!ATS.store.isAvailable()) $("#storage-warning").hidden = false;
+  $("#year").textContent = new Date().getFullYear();
   updateCount();
 })();

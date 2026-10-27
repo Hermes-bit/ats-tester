@@ -30,18 +30,21 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 
   Dans les deux cas, l'IA n'invente rien et te pose des questions sur les compétences qui manquent. Une option masque ton e-mail et ton téléphone avant le partage.
 - **Suivi des candidatures** : sauvegarde de chaque candidature (entreprise, poste, date, statut, notes, scores, fiche de poste et textes envoyés), recherche, filtres par statut et statistiques.
+- **Nouvelle offre** : un bouton vide l'offre, la lettre et les résultats en gardant ton CV, pour enchaîner les candidatures. Le formulaire s'ouvre toujours vide : rien n'est gardé d'une visite à l'autre.
 - **Export / import JSON** pour sauvegarder tes candidatures ou les transférer sur un autre ordinateur.
 - **Confidentialité** : tout est traité **dans le navigateur**. Aucun fichier n'est envoyé sur un serveur.
 - Interface responsive (ordinateur et mobile), avec un mode sombre automatique.
 
 ## Identité visuelle
 
-Le design s'inspire d'**Hermès**, le messager des dieux grecs : ton CV et ta lettre sont des messages qui doivent arriver jusqu'au recruteur.
+Le site est pensé comme une **page publicitaire** de l'outil, présentée par son créateur.
 
-- **Logo** : une pièce de monnaie grecque antique (bord perlé, bleu nuit et or) frappée d'une **coche ailée**. L'aile rappelle les sandales ailées d'Hermès, la coche une candidature qui passe le filtre.
-- **Couleurs** : bleu nuit `#131C3A`, or antique `#C9A24F`, fond marbre `#F7F4EE`. Un mode sombre s'active automatiquement.
+- **Style** : fond noir bleuté, panneaux en verre dépoli, néons cyan, turquoise et vert, grands titres en capitales.
+- **Logo** : une pièce grecque antique frappée d'une **coche ailée**, en clin d'œil à Hermès, le messager des dieux (l'aile rappelle ses sandales ailées, la coche une candidature qui passe le filtre).
+- **Accroche** : portrait détouré du créateur devant un anneau lumineux, avec des étiquettes flottantes (indice ATS, prompt IA, 100 % local).
+- **Couleurs** : fond `#060B0D`, cyan `#38BDF8`, turquoise `#2DD4BF`, émeraude `#34D399`.
 - **Typographie** : *Cormorant Garamond* pour les titres, *Inter* pour le texte (hébergées dans le dépôt).
-- **Détails** : frise grecque (méandre), synthèse des scores sur une tablette bleu nuit, image de partage pour les réseaux sociaux.
+- **Partage** : image d'aperçu pour LinkedIn et les réseaux sociaux (`assets/img/og-image.png`).
 
 ## Utilisation
 
@@ -95,7 +98,7 @@ ats-tester/
 │   ├── js/prompt.js           # Prompt pour une IA générative à partir des résultats
 │   ├── js/storage.js          # Sauvegarde locale des candidatures + export / import
 │   ├── js/app.js              # Interface
-│   ├── img/                   # Logo, favicon, icône iPhone, image de partage
+│   ├── img/                   # Logo, favicon, portrait, icône iPhone, image de partage
 │   └── vendor/                # pdf.js 3.11.174, mammoth 1.8.0 et polices (inclus, sans CDN)
 ├── docs/                      # Captures d'écran
 └── .github/workflows/deploy.yml
