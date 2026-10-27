@@ -134,7 +134,10 @@
         </article>
 
         <article class="card">
-          <h2 class="card-title">Recommandations</h2>
+          <div class="card-title-row">
+            <h2 class="card-title">Recommandations</h2>
+            <button class="link" id="go-ai">Corriger avec mon IA ↓</button>
+          </div>
           <ul class="recos" id="recos"></ul>
         </article>
 
@@ -169,6 +172,34 @@
           </div>
           <p class="muted small">Voici le texte brut extrait de ton document, dans l'ordre où un logiciel le lit. Les mots-clés trouvés sont surlignés. S'il manque des informations ou si l'ordre est incohérent, l'ATS les perdra aussi.</p>
           <pre class="raw" id="raw-text"></pre>
+        </article>
+
+        <article class="card" id="ai-card">
+          <div class="card-title-row">
+            <h2 class="card-title">Perfectionner avec ton IA</h2>
+            <span class="muted small" id="ai-size"></span>
+          </div>
+          <p class="muted small">Ce prompt reprend la fiche de poste, tes documents et les résultats ci-dessus. Colle-le dans ton IA (ChatGPT, Claude, Gemini, Le Chat, Copilot…) : elle réécrira ton CV et ta lettre sans rien inventer, puis te posera des questions sur les compétences manquantes.</p>
+          <div class="ai-options">
+            <label class="field">
+              <span>À perfectionner</span>
+              <select id="ai-target"></select>
+            </label>
+            <label class="check"><input type="checkbox" id="ai-mask" checked> Masquer mon e-mail et mon téléphone</label>
+          </div>
+          <textarea id="ai-prompt" class="ai-prompt" rows="14" spellcheck="false" aria-label="Prompt à copier dans ton IA"></textarea>
+          <div class="actions actions-tight">
+            <button id="btn-copy-prompt" class="btn btn-primary">Copier le prompt</button>
+            <span class="ai-links">Copier et ouvrir :
+              <a href="https://chatgpt.com/" target="_blank" rel="noopener" data-ai>ChatGPT</a>
+              <a href="https://claude.ai/new" target="_blank" rel="noopener" data-ai>Claude</a>
+              <a href="https://gemini.google.com/app" target="_blank" rel="noopener" data-ai>Gemini</a>
+              <a href="https://chat.mistral.ai/chat" target="_blank" rel="noopener" data-ai>Le Chat</a>
+              <a href="https://copilot.microsoft.com/" target="_blank" rel="noopener" data-ai>Copilot</a>
+            </span>
+          </div>
+          <p class="ok-msg ai-msg" id="ai-msg" role="status"></p>
+          <p class="hint">Le prompt contient le texte de tes documents : relis-le avant de le partager. Ensuite, réponds aux questions de l'IA, vérifie chaque phrase proposée, reporte les corrections dans ton CV et relance l'analyse ici pour mesurer le progrès.</p>
         </article>
 
         <article class="card save-card">
@@ -254,6 +285,7 @@
   <script src="assets/js/keywords.js"></script>
   <script src="assets/js/extract.js"></script>
   <script src="assets/js/analyzer.js"></script>
+  <script src="assets/js/prompt.js"></script>
   <script src="assets/js/storage.js"></script>
   <script src="assets/js/app.js"></script>
 </body>

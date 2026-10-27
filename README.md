@@ -20,6 +20,7 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 - **Vérifications de la lettre** : nom de l'entreprise, intitulé du poste, longueur, formule d'appel, formule de politesse, objet.
 - **Scores** pour le CV, la lettre et un indice global, avec des **recommandations** classées par priorité.
 - **« Ce que voit l'ATS »** : le texte brut extrait, dans l'ordre de lecture, avec les mots-clés trouvés surlignés.
+- **Prompt pour ton IA générative** : un prompt prêt à copier dans ChatGPT, Claude, Gemini, Le Chat ou Copilot. Il reprend la fiche de poste, tes documents, les scores, les mots-clés manquants et les problèmes détectés. L'IA réécrit ton CV et ta lettre sans rien inventer, puis te pose des questions sur les compétences qui manquent. Une option masque ton e-mail et ton téléphone avant le partage.
 - **Suivi des candidatures** : sauvegarde de chaque candidature (entreprise, poste, date, statut, notes, scores, fiche de poste et textes envoyés), recherche, filtres par statut et statistiques.
 - **Export / import JSON** pour sauvegarder tes candidatures ou les transférer sur un autre ordinateur.
 - **Confidentialité** : tout est traité **dans le navigateur**. Aucun fichier n'est envoyé sur un serveur.
@@ -31,7 +32,7 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 2. Colle la fiche de poste ou importe-la (PDF, DOCX…).
 3. Importe ton CV et, si tu le souhaites, ta lettre de motivation.
 4. Clique sur **Analyser ma candidature**.
-5. Corrige tes documents d'après les recommandations, puis relance l'analyse.
+5. Corrige tes documents d'après les recommandations, ou copie le prompt de la rubrique **Perfectionner avec ton IA** dans ton IA générative, puis relance l'analyse.
 6. **Enregistre** la candidature pour la retrouver dans l'onglet *Mes candidatures*.
 
 > Clique sur une ligne du tableau des mots-clés pour ignorer un terme sans rapport avec le poste (ex. le nom de la ville).
@@ -74,6 +75,7 @@ ats-tester/
 │   ├── js/keywords.js         # Dictionnaire de compétences et mots vides (FR / EN)
 │   ├── js/extract.js          # Extraction du texte : PDF (pdf.js), DOCX (mammoth), TXT…
 │   ├── js/analyzer.js         # Moteur d'analyse ATS : mots-clés, vérifications, scores
+│   ├── js/prompt.js           # Prompt pour une IA générative à partir des résultats
 │   ├── js/storage.js          # Sauvegarde locale des candidatures + export / import
 │   ├── js/app.js              # Interface
 │   └── vendor/                # pdf.js 3.11.174 et mammoth 1.8.0 (inclus, sans CDN)

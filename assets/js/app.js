@@ -223,6 +223,9 @@
     state.rawCtx = ctx;
     renderRaw();
 
+    // Prompt pour une IA générative
+    renderPrompt();
+
     // Formulaire d'enregistrement
     if (!$("#save-date").value) $("#save-date").value = new Date().toISOString().slice(0, 10);
     $("#btn-save").textContent = state.editingId ? "Mettre à jour la candidature" : "Enregistrer dans Mes candidatures";
@@ -243,6 +246,52 @@
     const found = new Set(res.coverage.filter((c) => c.found).map((c) => c.key));
     $("#raw-text").innerHTML = ATS.highlight(doc.text, found, ctx.jdText, $("#title").value) || '<span class="muted">(aucun texte)</span>';
   }
+
+  /* ---------- Prompt pour une IA générative ---------- */
+  const AI_TARGETS = { both: "Le CV et la lettre", cv: "Le CV seulement", letter: "La lettre seulement", "cv-newletter": "Le CV + rédiger une lettre" };
+  function renderPrompt() {
+    const ctx = state.rawCtx, r = state.result;
+    if (!ctx || !r) return;
+    const sel = $("#ai-target");
+    const keys = ctx.cv && ctx.letter ? ["both", "cv", "letter"] : ctx.cv ? ["cv", "cv-newletter"] : ["letter"];
+    const prev = sel.value;
+    sel.innerHTML = keys.map((k) => '<option value="' + k + '">' + AI_TARGETS[k] + "</option>").join("");
+    sel.value = keys.includes(prev) ? prev : keys[0];
+    sel.disabled = keys.length < 2;
+    const prompt = ATS.buildPrompt(r, {
+      title: $("#title").value, company: $("#company").value, url: $("#url").value, jdText: ctx.jdText,
+      cvText: ctx.cv ? ctx.cv.text : "", letterText: ctx.letter ? ctx.letter.text : "",
+      target: sel.value, maskContacts: $("#ai-mask").checked,
+    });
+    $("#ai-prompt").value = prompt;
+    $("#ai-size").textContent = prompt.length.toLocaleString("fr-FR") + " caractères";
+    $("#ai-msg").textContent = "";
+  }
+  $("#ai-target").addEventListener("change", renderPrompt);
+  $("#ai-mask").addEventListener("change", renderPrompt);
+  $("#go-ai").addEventListener("click", () => $("#ai-card").scrollIntoView({ behavior: "smooth", block: "start" }));
+
+  function copyText(text) {
+    // Copie synchrone d'abord : elle aboutit avant que l'onglet de l'IA ne prenne le focus
+    const active = document.activeElement;
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    ta.remove();
+    if (active) active.focus({ preventScroll: true });
+    if (ok) return Promise.resolve();
+    return navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject(new Error("Copie impossible"));
+  }
+  function copyPrompt(aiName) {
+    const msg = $("#ai-msg");
+    copyText($("#ai-prompt").value).then(
+      () => { msg.textContent = "✓ Prompt copié. Colle-le dans " + (aiName || "ton IA") + " (Ctrl+V ou appui long > Coller)."; },
+      () => { msg.innerHTML = '<span class="error">Copie impossible : le texte est sélectionné, copie-le à la main (Ctrl+C).</span>'; $("#ai-prompt").select(); });
+  }
+  $("#btn-copy-prompt").addEventListener("click", () => copyPrompt());
+  $$("[data-ai]").forEach((a) => a.addEventListener("click", () => copyPrompt(a.textContent)));
 
   /* ---------- Enregistrement ---------- */
   const statusSel = $("#save-status"), filterSel = $("#filter-status");
