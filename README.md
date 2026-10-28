@@ -22,7 +22,9 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 - **Distinction obligatoire / « un plus »** : les compétences marquées « est un plus » ou « serait appréciée » pèsent moins dans le score.
 - **Vérifications ATS** : texte lisible (PDF scanné ?), coordonnées, rubriques standards, intitulé du poste, longueur, dates, tableaux et images, **ligatures typographiques** (« Shapeﬁle » lu « Shape fi le »), lettres isolées.
 - **Vérifications de la lettre** : nom de l'entreprise, intitulé du poste, longueur, formule d'appel, formule de politesse, objet.
-- **Scores** pour le CV, la lettre et un indice global, avec des **recommandations** classées par priorité.
+- **Lecture structurée du CV**, comme un vrai ATS : nom, e-mail validé, téléphone au format international (E.164), ville, expériences (intitulé, entreprise, dates, **durée en mois calculée**, poste actuel), formations (**niveau normalisé** Bac+2 à Bac+8), compétences (**année du dernier usage** et contexte). Les intitulés de poste sont normalisés (« VP Sales », « Directeur commercial », « Head of Sales » → `SALES_DIRECTOR` ; « Géomaticien », « Chargé d'études SIG » → `GIS_ANALYST`). Ce qui ne peut pas être découpé est gardé tel quel (`unparsed_rich_text`) et reste cherchable.
+- **Questions éliminatoires** : autorisation de travail, permis, diplôme exigé, années d'expérience minimum, langues, habilitation. Un « non » fait passer la candidature à `DISQUALIFIED_AUTO` : elle est archivée automatiquement à l'enregistrement et un webhook (Zapier, Make, n8n…) peut être prévenu.
+- **Score en 3 piliers** pour le CV (voir plus bas), un score pour la lettre et un indice global, avec des **recommandations** classées par priorité.
 - **« Ce que voit l'ATS »** : le texte brut extrait, dans l'ordre de lecture, avec les mots-clés trouvés surlignés.
 - **Prompt pour ton IA générative** : un prompt prêt à copier dans ChatGPT, Claude, Gemini, Le Chat ou Copilot. Il reprend la fiche de poste, tes documents, les scores, les mots-clés manquants et les problèmes détectés. Deux modes :
   - **Retouches, en gardant ma mise en page** (par défaut) : l'IA propose des remplacements de texte précis (emplacement, texte actuel, nouveau texte), de même longueur, à reporter dans ton fichier d'origine. La charte graphique de ton CV et de ta lettre reste intacte.
@@ -31,7 +33,8 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
   Dans les deux cas, l'IA n'invente rien et te pose des questions sur les compétences qui manquent. Une option masque ton e-mail et ton téléphone avant le partage.
 - **Espace personnel** : chacun se connecte avec son e-mail et un mot de passe et retrouve ses propres candidatures. Les candidatures enregistrées avant la création des espaces sont proposées à la récupération lors de la première connexion. Voir [Espaces personnels](#espaces-personnels).
 - **Temps de réflexion** : pendant l'analyse, une fenêtre montre les étapes une à une (lecture, mots-clés, comparaison, contrôles, recommandations) avec les vrais chiffres.
-- **Suivi des candidatures** : sauvegarde de chaque candidature (entreprise, poste, date, statut, notes, scores, fiche de poste et textes envoyés), recherche, filtres par statut et statistiques.
+- **Suivi des candidatures** : sauvegarde de chaque candidature (entreprise, poste, date, statut, notes, scores, fiche de poste, textes envoyés et profil lu par l'ATS), filtres par statut, archives et statistiques.
+- **Recherche booléenne** : `QGIS AND (Rennes OR Nantes) NOT stage`, `ET` / `OU` / `SAUF`, `-mot`, `"expression exacte"` et champs (`entreprise:`, `poste:`, `statut:`, `offre:`, `cv:`, `competences:`, `notes:`).
 - **Nouvelle offre** : un bouton vide l'offre, la lettre et les résultats en gardant ton CV, pour enchaîner les candidatures. Le formulaire s'ouvre toujours vide : rien n'est gardé d'une visite à l'autre.
 - **Export / import JSON** pour sauvegarder tes candidatures ou les transférer sur un autre ordinateur.
 - **Confidentialité** : l'analyse se fait **dans le navigateur**. Aucun fichier n'est envoyé sur un serveur. En mode cloud, seules les candidatures que tu enregistres (avec le texte de l'offre et de tes documents) sont synchronisées dans ton espace.
@@ -83,7 +86,10 @@ En mode appareil, personne ne peut réinitialiser un mot de passe oublié : pens
 ### Activer la synchronisation (Supabase, gratuit)
 
 1. Crée un compte sur [supabase.com](https://supabase.com) (connexion possible avec GitHub), puis **New project** (région Europe, par exemple Paris).
-2. Ouvre **SQL Editor → New query**, colle le contenu de [`supabase/schema.sql`](supabase/schema.sql) et clique sur **Run**. La table `applications` est créée : chaque utilisateur ne voit que ses propres lignes.
+2. Ouvre **SQL Editor → New query**, colle le contenu de [`supabase/schema.sql`](supabase/schema.sql) et clique sur **Run**. Le script crée :
+   - la table `applications`, où chaque utilisateur ne voit que ses propres lignes ;
+   - les vues `candidats`, `experiences_professionnelles` (avec `duree_mois` calculée), `formations` et `competences` ;
+   - un index plein texte et un index trigrammes sur le texte non découpé.
 3. Dans **Authentication → URL Configuration** :
    - **Site URL** : `https://hermes-bit.github.io/ats-tester/connexion.html`
    - **Redirect URLs** : ajoute `https://hermes-bit.github.io/ats-tester/**`
@@ -138,7 +144,10 @@ ats-tester/
 │   ├── css/style.css          # Styles (clair / sombre, responsive)
 │   ├── js/keywords.js         # Dictionnaire de compétences et mots vides (FR / EN)
 │   ├── js/extract.js          # Extraction du texte : PDF (pdf.js), DOCX (mammoth), TXT…
-│   ├── js/analyzer.js         # Moteur d'analyse ATS : mots-clés, vérifications, scores
+│   ├── js/analyzer.js         # Moteur d'analyse ATS : mots-clés, vérifications, score en 3 piliers
+│   ├── js/profile.js          # Lecture structurée du CV : coordonnées, expériences, formations, compétences
+│   ├── js/offer.js            # Exigences de l'offre et questions éliminatoires
+│   ├── js/search.js           # Recherche booléenne dans les candidatures
 │   ├── js/prompt.js           # Prompt pour une IA générative à partir des résultats
 │   ├── js/config.js           # Mode des espaces : appareil (vide) ou cloud (Supabase)
 │   ├── js/auth.js             # Comptes et sessions (mot de passe haché ou Supabase)
@@ -148,20 +157,51 @@ ats-tester/
 │   ├── js/fx.js               # Effets : apparitions, compteurs, démo, confettis
 │   ├── img/                   # Logo, favicon, portrait, icône iPhone, image de partage
 │   └── vendor/                # pdf.js 3.11.174, mammoth 1.8.0 et polices (inclus, sans CDN)
-├── supabase/schema.sql        # Table et règles d'accès pour le mode cloud
+├── supabase/schema.sql        # Table, règles d'accès, vues du schéma ATS et index plein texte
+├── tests/                     # Tests unitaires Jest (+ PGlite pour le SQL)
+├── package.json               # Dépendances de test uniquement (le site n'a pas d'étape de compilation)
 ├── docs/                      # Captures d'écran
 └── .github/workflows/deploy.yml
 ```
 
 ## Comment le score est calculé
 
-| Score | Composition |
+Le score du CV suit trois piliers :
+
+| Pilier | Poids | Contenu |
+|---|---|---|
+| **Compétences techniques requises** | 50 % | Logiciels, langages, formats, méthodes demandés par l'offre. |
+| **Contexte et savoir-être** | 30 % | Intitulé de poste (exact ou même métier normalisé), années d'expérience demandées, management, savoir-être, vocabulaire de l'offre. |
+| **Atouts et certifications** | 20 % | Compétences « un plus », certifications, langues, niveau de diplôme. |
+
+Deux règles s'appliquent aux compétences techniques :
+
+- **Récence** : chaque compétence est datée d'après les expériences où elle apparaît. Utilisée l'année en cours, elle compte **×1,5** ; il y a 4 ans, ×1,0 ; il y a plus de 4 ans, **×0,5**. Citée seulement dans une liste, sans date, elle compte ×1,0. Le pilier est plafonné à 100 %.
+- **Durée** : quand l'offre demande « X ans d'expérience en … », l'outil additionne la `duree_mois` de toutes les expériences où la compétence (ou un synonyme) apparaît. Les périodes qui se chevauchent sont comptées une seule fois. En dessous du seuil, la compétence ne rapporte qu'une partie de ses points.
+
+Un pilier sans aucun critère dans l'offre est marqué « non applicable » et son poids est réparti sur les autres. Un CV illisible est plafonné à 10.
+
+| Autres scores | Composition |
 |---|---|
-| **CV** | 70 % mots-clés (compétences techniques 75 %, termes fréquents 15 %, savoir-être 10 %) + 30 % vérifications de format |
 | **Lettre** | 50 % mots-clés (reprendre 50 % des compétences suffit pour le score maximal) + 50 % vérifications de forme |
 | **Indice global** | 70 % CV + 30 % lettre |
 
+Les vérifications de format (lisibilité, coordonnées, rubriques, dates…) restent affichées, mais ne comptent plus dans le score du CV.
+
 Le poids d'un mot-clé augmente s'il revient souvent dans l'offre ou s'il figure dans l'intitulé du poste. Il diminue s'il est présenté comme « un plus ».
+
+Une **question éliminatoire** non remplie passe la candidature à `DISQUALIFIED_AUTO`, quel que soit le score : c'est ce que fait un vrai ATS.
+
+## Tests
+
+Les règles de lecture, de normalisation, de score, de questions éliminatoires et de recherche sont couvertes par des tests unitaires (Jest). Le script `supabase/schema.sql` est exécuté sur un vrai Postgres embarqué (PGlite). Les tests couvrent aussi les cas limites : CV mal formaté, dates manquantes ou incohérentes, caractères spéciaux (ligatures, espaces insécables, emojis), requêtes mal formées.
+
+```bash
+npm install
+npm test
+```
+
+GitHub Actions lance les tests avant chaque mise en ligne : si un test échoue, le site n'est pas mis à jour.
 
 ## Adapter l'outil à un autre métier
 

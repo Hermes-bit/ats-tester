@@ -50,6 +50,9 @@ window.ATS = window.ATS || {};
 
   // Compilation unique du dictionnaire
   const COMPILED = ATS.SKILLS.map((s) => { const body = buildBody(s.aliases); return { ...s, body, re: regexFromBody(body) }; });
+  // Partagés avec la lecture du CV (profile.js) et de l'offre (offer.js)
+  ATS.SKILL_MATCHERS = COMPILED;
+  ATS.makeRegex = buildRegex;
 
   function count(re, text) {
     if (!text) return 0;
@@ -172,11 +175,114 @@ window.ATS = window.ATS || {};
     return w ? sum(valid, ([v, wt]) => v * wt) / w : 0;
   }
 
+  /* ---------- Score en 3 piliers ----------
+   * 1. Compétences techniques requises : 50 %. Chaque compétence trouvée vaut son poids × coefficient de récence
+   *    (année en cours 1,5 ; plus de 4 ans 0,5 ; inconnue 1,0) × facteur de durée si l'offre demande X ans.
+   * 2. Contexte et savoir-être : 30 % (intitulé de poste normalisé, années d'expérience, management, savoir-être, vocabulaire de l'offre).
+   * 3. Atouts et certifications : 20 % (compétences « un plus », certifications, langues, diplôme).
+   * Un pilier sans critère dans l'offre est marqué « non applicable » et son poids est réparti sur les autres.
+   */
+  const HARD_CATS = new Set(["tools", "tech", "formats", "methods"]);
+  const PILLAR_WEIGHTS = { hard: 0.5, context: 0.3, nice: 0.2 };
+  const r3 = (x) => Math.round(x * 1000) / 1000;
+  function cappedCredit(items) {
+    const tot = sum(items, (x) => x.weight);
+    return tot ? Math.min(1, sum(items, (x) => x.weight * x.credit) / tot) : null;
+  }
+  function blendNull(parts) {
+    const valid = parts.filter(([v]) => v !== null && v !== undefined);
+    return valid.length ? blend(valid) : null;
+  }
+
+  function scorePillars(cov, profile, offer, text, ctx) {
+    const n = norm(text);
+    const comp = new Map(profile.competences.map((c) => [c.nom_skill, c]));
+    const skillReq = new Map(), general = [];
+    for (const r of offer.experience) {
+      if (r.skills.length) r.skills.forEach((l) => { if (!skillReq.has(l) || skillReq.get(l).years < r.years) skillReq.set(l, r); });
+      else general.push(r);
+    }
+    const credit = (c) => {
+      const k = comp.get(c.label);
+      const year = k ? k.recence_annee : null;
+      const coef = ATS.profile.recencyCoef(year, ctx.now);
+      const req = skillReq.get(c.label);
+      const months = k ? k.mois_experience || 0 : 0;
+      const durFactor = req ? (months >= req.years * 12 ? 1 : Math.max(0.4, months / (req.years * 12))) : 1;
+      return { label: c.label, key: c.key, cat: c.cat, weight: c.weight, found: c.found > 0, recence_annee: year, coef, months,
+        required_years: req ? req.years : null, durFactor: r3(durFactor), credit: c.found > 0 ? r3(coef * durFactor) : 0, contexte: k ? k.contexte_texte : "" };
+    };
+
+    // Les langues demandées sont notées avec les certifications (pilier 3), pas comme compétences techniques
+    const langs = new Set(offer.languages.map((l) => l.lang));
+    const technical = cov.filter((c) => HARD_CATS.has(c.cat) && !langs.has(c.label));
+
+    // 1. Compétences techniques requises
+    const hardItems = technical.filter((c) => !c.bonus).map(credit);
+    const hard = cappedCredit(hardItems);
+
+    // 2. Contexte et savoir-être
+    const offerT = offer.title_norm;
+    const cvCodes = [...new Set([profile.headline_normalise, ...profile.experiences.map((e) => e.intitule_normalise)].filter(Boolean))];
+    const parts = [];
+    if (ctx.title || offerT.code) {
+      const tc = ctx.title ? titleCoverage(ctx.title, text) : { exact: false, ratio: 0 };
+      let s = tc.exact ? 1 : tc.ratio >= 0.8 ? 0.9 : tc.ratio * 0.6, how = tc.exact ? "Intitulé exact présent dans le CV" : Math.round(tc.ratio * 100) + " % des mots de l'intitulé";
+      if (offerT.code && cvCodes.includes(offerT.code) && s < 0.85) { s = 0.85; how = "Même métier normalisé (" + offerT.code + ")"; }
+      else if (offerT.family && s < 0.6 && cvCodes.some((c) => ATS.profile.familyOf(c) === offerT.family)) { s = 0.6; how = "Même famille de métiers (" + offerT.family + ")"; }
+      parts.push({ id: "title", label: "Intitulé du poste", score: s, weight: 0.35, detail: how, offer_code: offerT.code, offer_label: offerT.label, cv_codes: cvCodes });
+    }
+    const gen = general.sort((a, b) => b.years - a.years)[0];
+    if (gen) {
+      const dated = profile.experiences.some((e) => e.duree_mois);
+      const m = profile.total_experience_mois;
+      parts.push({ id: "experience", label: "Années d'expérience (" + gen.years + " an" + (gen.years > 1 ? "s" : "") + " demandés)", weight: 0.25,
+        score: dated ? Math.min(1, m / (gen.years * 12)) : 0.5, detail: dated ? ATS.formatMonths(m) + " lus dans ton CV (périodes qui se chevauchent comptées une fois)" : "Durée non calculable : dates des expériences illisibles" });
+    }
+    if (offer.management) {
+      const ok = ATS.MANAGEMENT_CV.test(n);
+      parts.push({ id: "management", label: "Management / encadrement", score: ok ? 1 : 0, weight: 0.15, detail: ok ? "Expérience d'encadrement repérée" : "Aucune expérience d'encadrement repérée" });
+    }
+    const softItems = cov.filter((c) => c.cat === "soft");
+    const otherItems = cov.filter((c) => c.cat === "other");
+    const sr = ratio(softItems), or = ratio(otherItems);
+    if (sr !== null) parts.push({ id: "soft", label: "Savoir-être", score: sr, weight: 0.15, detail: softItems.filter((c) => c.found).length + " / " + softItems.length + " trouvés" });
+    if (or !== null) parts.push({ id: "terms", label: "Vocabulaire de l'offre", score: or, weight: 0.1, detail: otherItems.filter((c) => c.found).length + " / " + otherItems.length + " termes trouvés" });
+    const context = blendNull(parts.map((p) => [p.score, p.weight]));
+
+    // 3. Atouts et certifications
+    const bonusItems = technical.filter((c) => c.bonus).map(credit);
+    const bonus = cappedCredit(bonusItems);
+    const certItems = offer.certifications.map((c) => { c.re.lastIndex = 0; return { label: c.label, found: c.re.test(text) }; })
+      .concat(offer.languages.filter((l) => !l.knockout).map((l) => ({ label: l.lang + (l.level ? " (" + l.level + ")" : ""), found: l.re.test(n) })));
+    if (offer.licence && offer.licence.nice) certItems.push({ label: "Permis B", found: /(permis b\b|permis de conduire|driving licen)/.test(n) });
+    const certs = certItems.length ? certItems.filter((x) => x.found).length / certItems.length : null;
+    let degree = null;
+    if (offer.degree) {
+      const r = profile.niveau_rang;
+      degree = { required: offer.degree.level, found: profile.niveau_max, score: r === null ? 0 : r >= offer.degree.rank ? 1 : r === offer.degree.rank - 1 ? 0.5 : 0 };
+    }
+    const nice = blendNull([[bonus, 0.5], [certs, 0.3], [degree ? degree.score : null, 0.2]]);
+
+    const scores = { hard, context, nice };
+    const active = Object.keys(PILLAR_WEIGHTS).filter((k) => scores[k] !== null);
+    const wsum = sum(active, (k) => PILLAR_WEIGHTS[k]);
+    const total = active.length ? sum(active, (k) => scores[k] * PILLAR_WEIGHTS[k]) / wsum : 0;
+    const eff = (k) => (scores[k] === null ? 0 : PILLAR_WEIGHTS[k] / wsum);
+    return {
+      total,
+      hard: { score: hard, weight: PILLAR_WEIGHTS.hard, effective: eff("hard"), items: hardItems },
+      context: { score: context, weight: PILLAR_WEIGHTS.context, effective: eff("context"), parts, title: parts.find((p) => p.id === "title") || null },
+      nice: { score: nice, weight: PILLAR_WEIGHTS.nice, effective: eff("nice"), bonus: bonusItems, certs: certItems, degree },
+    };
+  }
+
   /* ---------- CV ---------- */
   function analyzeCV(doc, kw, ctx, ignored) {
     const text = doc.text || "";
     const meta = doc.meta || {};
     const checks = [];
+    const profile = ATS.profile.parseCV(doc.rawText || text, { now: ctx.now });
     const chars = text.replace(/\s/g, "").length;
     const readable = chars >= 400;
     checks.push(check("readable", "Texte lisible par un ATS", readable ? "ok" : "fail",
@@ -203,19 +309,19 @@ window.ATS = window.ATS || {};
       ligs.length ? 0 : 5, 5,
       "Ton PDF contient des ligatures (« fi » ou « fl » fusionnés en un seul caractère). Certains ATS les lisent mal et « Shapefile » peut devenir « Shape le ». Désactive les ligatures dans ton logiciel (Word : Police > Avancé > Ligatures : Aucune) ou exporte avec une autre police."));
 
-    const email = /[\w.+-]+@[\w-]+\.[\w.-]+/.test(text);
-    const phone = /(?:\+\d{1,3}[\s.]?)?(?:\d[\s.\-]?){8,13}\d/.test(text);
+    // Coordonnées : e-mail valide et téléphone convertible au format international E.164
+    const cand = profile.candidat;
+    const email = !!cand.email, phone = !!cand.telephone;
+    const badEmail = profile.issues.find((i) => i.code === "email_invalid"), badPhone = profile.issues.find((i) => i.code === "phone_invalid");
     checks.push(check("contact", "Coordonnées (e-mail et téléphone)", email && phone ? "ok" : email || phone ? "warn" : "fail",
-      (email ? "E-mail ✓" : "E-mail manquant") + " · " + (phone ? "Téléphone ✓" : "Téléphone manquant"),
+      (email ? "E-mail ✓ " + cand.email : badEmail ? "E-mail invalide « " + badEmail.detail + " »" : "E-mail manquant") + " · " +
+      (phone ? "Téléphone ✓ " + cand.telephone : badPhone ? "Téléphone illisible « " + badPhone.detail + " »" : "Téléphone manquant"),
       (email ? 8 : 0) + (phone ? 7 : 0), 15,
-      "Écris ton e-mail et ton téléphone en texte normal, en haut du CV (pas dans une image, un en-tête ou un pied de page)."));
+      "Écris ton e-mail et ton téléphone complets en texte normal, en haut du CV (06 12 34 56 78 ou +33 6 12 34 56 78), pas dans une image, un en-tête ou un pied de page."));
 
-    const n = norm(text);
-    const sections = {
-      "Expérience": /(experiences?( professionnelles?)?|parcours professionnel|emplois?|work experience)/.test(n),
-      "Formation": /(formations?|diplomes?|education|cursus|etudes)/.test(n),
-      "Compétences": /(competences|skills|savoir faire|outils)/.test(n),
-    };
+    // Rubriques : titres réellement reconnus comme en-têtes de section (et non des mots isolés dans le texte)
+    const found = new Set(profile.sections.map((s) => s.type));
+    const sections = { "Expérience": found.has("experience"), "Formation": found.has("education"), "Compétences": found.has("skills") };
     const nSec = Object.values(sections).filter(Boolean).length;
     checks.push(check("sections", "Rubriques standards repérées", nSec === 3 ? "ok" : nSec >= 2 ? "warn" : "fail",
       Object.entries(sections).map(([k, v]) => (v ? "✓ " : "✗ ") + k).join(" · "),
@@ -237,10 +343,13 @@ window.ATS = window.ATS || {};
       lenSt === "ok" ? 10 : lenSt === "warn" ? 5 : 0, 10,
       wc < 300 ? "Ton CV est court : détaille tes missions avec des verbes d'action et les outils utilisés." : "Ton CV est long : vise 1 à 2 pages et garde ce qui sert l'offre."));
 
-    const years = (text.match(/\b(19|20)\d{2}\b/g) || []).length;
-    checks.push(check("dates", "Dates des expériences lisibles", years >= 2 ? "ok" : "warn",
-      years + " année(s) détectée(s)", years >= 2 ? 5 : 0, 5,
-      "Indique les dates au format « Mois AAAA – Mois AAAA » pour chaque expérience et formation."));
+    const exps = profile.experiences, datedExps = exps.filter((e) => e.duree_mois);
+    const exact = datedExps.filter((e) => !e.dates_estimees).length;
+    const dSt = exps.length && datedExps.length === exps.length ? (exact === datedExps.length ? "ok" : "warn") : exps.length ? "warn" : "fail";
+    checks.push(check("dates", "Expériences datées et découpées", dSt,
+      exps.length ? exps.length + " expérience(s) découpée(s), " + datedExps.length + " avec une durée calculée" + (exact < datedExps.length ? ", dont " + (datedExps.length - exact) + " sans mois (durée estimée)" : "") : "Aucune expérience datée n'a pu être découpée",
+      dSt === "ok" ? 5 : dSt === "warn" ? 3 : 0, 5,
+      "Écris les dates de chaque expérience au format « Mois AAAA – Mois AAAA » (ou « depuis Mois AAAA »), sur la ligne de l'intitulé du poste : l'ATS calcule ainsi ta durée d'expérience et la récence de tes compétences."));
 
     const t = meta.type || "texte";
     const typeOk = ["pdf", "docx", "texte"].includes(t) || t === "txt";
@@ -260,14 +369,14 @@ window.ATS = window.ATS || {};
     const formatScore = (sum(checks, (c) => c.points) / fmtMax) * 100;
 
     const cov = coverage(kw, text, ignored);
-    const hard = cov.filter((c) => c.cat !== "soft" && c.cat !== "other");
-    const soft = cov.filter((c) => c.cat === "soft");
-    const other = cov.filter((c) => c.cat === "other");
-    const kwScore = blend([[ratio(hard), 0.75], [ratio(soft), 0.1], [ratio(other), 0.15]]) * 100;
-
-    let score = Math.round(0.7 * kwScore + 0.3 * formatScore);
+    const pillars = scorePillars(cov, profile, ctx.offer, text, ctx);
+    let score = Math.round(pillars.total * 100);
     if (!readable) score = Math.min(score, 10);
-    return { score, kwScore: Math.round(kwScore), formatScore: Math.round(formatScore), checks, coverage: cov, words: wc };
+    const pct = (x) => (x === null ? null : Math.round(x * 100));
+    return {
+      score, kwScore: pct(pillars.hard.score) || 0, formatScore: Math.round(formatScore), checks, coverage: cov, words: wc,
+      pillars, pillarScores: { hard: pct(pillars.hard.score), context: pct(pillars.context.score), nice: pct(pillars.nice.score) }, profile,
+    };
   }
 
   /* ---------- Lettre ---------- */
@@ -319,8 +428,43 @@ window.ATS = window.ATS || {};
   }
 
   /* ---------- Recommandations ---------- */
-  function recommendations(kw, cv, lm) {
+  const PROFILE_ADVICE = {
+    no_sections: ["high", "L'ATS n'a repéré <b>aucune rubrique standard</b> : ton CV n'a pas pu être découpé et il est gardé en texte brut. Ajoute des titres de rubriques sur leur propre ligne : « Expériences professionnelles », « Formation », « Compétences »."],
+    exp_unparsed: ["high", "Ta rubrique Expériences est là, mais <b>aucune expérience datée</b> n'a pu être découpée. Mets les dates sur la ligne du poste : « Géomaticien SIG – Alpha Géo – Janv. 2021 – Mars 2023 »."],
+    no_exp_section: ["mid", "Pas de rubrique « Expériences professionnelles » repérée : l'ATS a cherché tes expériences dans tout le texte. Ajoute ce titre sur sa propre ligne."],
+    edu_unparsed: ["mid", "Ta rubrique Formation est là, mais aucun diplôme n'a été reconnu. Écris l'intitulé exact (Master 2, Licence, BUT, BTS…), l'établissement et l'année."],
+    exp_invalid_dates: ["mid", "Certaines expériences ont des dates illisibles ou incohérentes (fin avant début) : leur durée n'est pas comptée."],
+    dates_estimated: ["low", "Certaines expériences n'ont que des années, sans mois : l'ATS estime leur durée. Écris « Mois AAAA – Mois AAAA » pour un calcul exact."],
+    exp_no_title: ["mid", "Certaines expériences n'ont pas d'intitulé de poste lisible : écris l'intitulé sur la même ligne que les dates, ou juste au-dessus."],
+    name_missing: ["low", "Ton nom n'a pas été reconnu : écris « Prénom NOM » seul sur la première ligne du CV."],
+  };
+
+  function recommendations(kw, cv, lm, ko) {
     const recos = [];
+    if (ko) {
+      ko.failed.forEach((k) => recos.push({ level: "high", text: "<b>Critère éliminatoire non rempli</b> : " + esc(k.question) + " Un ATS rejette alors la candidature automatiquement (statut DISQUALIFIED_AUTO), quel que soit ton score." }));
+      const unknown = ko.items.filter((k) => k.status === "unknown" && k.id !== "work_auth");
+      if (unknown.length) recos.push({ level: "mid", text: "Questions éliminatoires sans réponse : " + unknown.map((k) => esc(k.question)).join(" ") + " Réponds-y dans la rubrique dédiée et rends l'information visible dans ton CV." });
+    }
+    if (cv && cv.pillars) {
+      const P = cv.pillars;
+      P.hard.items.filter((i) => i.found && i.required_years && i.durFactor < 1).forEach((i) => recos.push({ level: "high",
+        text: "L'offre demande <b>" + i.required_years + " an" + (i.required_years > 1 ? "s" : "") + " d'expérience en " + esc(i.label) + "</b> : ton CV en montre " + ATS.formatMonths(i.months) + ". Cite " + esc(i.label) + " dans chaque expérience datée où tu l'as utilisé." }));
+      const stale = P.hard.items.filter((i) => i.found && i.coef < 1);
+      if (stale.length) recos.push({ level: "mid", text: "Compétences anciennes (dernier usage il y a plus de 4 ans : coefficient 0,5 au lieu de 1,5 pour l'année en cours) : " + stale.map((i) => esc(i.label) + " (" + i.recence_annee + ")").join(", ") + ". Si tu les as utilisées depuis (projet, formation, mission), date-le." });
+      const undated = P.hard.items.filter((i) => i.found && !i.recence_annee);
+      if (undated.length) recos.push({ level: "low", text: "Ces compétences ne figurent que dans une liste, sans expérience datée : " + undated.map((i) => esc(i.label)).join(", ") + ". L'ATS ne peut calculer ni leur récence ni leur durée : cite-les aussi dans tes expériences." });
+      const t = P.context.title;
+      if (t && t.offer_code && t.score < 0.6) recos.push({ level: "mid", text: "L'ATS classe l'offre dans le métier <b>" + esc(t.offer_label) + "</b> (" + t.offer_code + ") mais ne le retrouve pas dans tes intitulés (" + (t.cv_codes.length ? t.cv_codes.join(", ") : "aucun intitulé reconnu") + "). Reprends l'intitulé de l'offre en titre de ton CV." });
+      const exp = P.context.parts.find((p) => p.id === "experience");
+      if (exp && exp.score < 1) recos.push({ level: "mid", text: esc(exp.label) + " : " + esc(exp.detail) + ". Vérifie que toutes tes expériences (stages et alternances compris) sont datées." });
+      const mg = P.context.parts.find((p) => p.id === "management");
+      if (mg && !mg.score) recos.push({ level: "mid", text: "L'offre parle de management ou d'encadrement. Si tu as encadré des stagiaires, animé une équipe ou piloté des prestataires, écris-le (« encadrement de 2 stagiaires »)." });
+      if (P.nice.degree && P.nice.degree.score < 1) recos.push({ level: "mid", text: "Diplôme demandé : " + esc(P.nice.degree.required) + ". Plus haut diplôme lu dans ton CV : " + esc(P.nice.degree.found || "aucun") + ". Écris l'intitulé officiel de ton diplôme (Master 2, diplôme d'ingénieur…)." });
+      const certMiss = P.nice.certs.filter((c) => !c.found);
+      if (certMiss.length) recos.push({ level: "low", text: "Certifications ou langues citées dans l'offre et absentes de ton CV : " + certMiss.map((c) => esc(c.label)).join(", ") + "." });
+    }
+    if (cv && cv.profile) cv.profile.issues.forEach((i) => { const a = PROFILE_ADVICE[i.code]; if (a) recos.push({ level: a[0], text: a[1] }); });
     if (cv) {
       const missing = cv.coverage.filter((c) => c.cat !== "other" && c.cat !== "soft" && !c.found && !c.bonus).sort((a, b) => b.weight - a.weight);
       if (missing.length) recos.push({ level: "high", text: "Compétences demandées absentes de ton CV : <b>" + missing.map((m) => esc(m.label)).join(", ") + "</b>. Ajoute-les avec les mots exacts de l'offre, <u>uniquement si tu les maîtrises</u> : un recruteur vérifiera en entretien." });
@@ -352,28 +496,43 @@ window.ATS = window.ATS || {};
     return { label: "Risque élevé de rejet automatique", tone: "bad" };
   };
 
-  /** Analyse complète */
-  ATS.analyze = function ({ jdText, title, company, cv, letter, ignored }) {
+  /** Verdict affiché : une candidature éliminée par une question éliminatoire l'est quel que soit son score. */
+  ATS.verdictFor = function (r) {
+    if (r && r.status === "DISQUALIFIED_AUTO") return { label: "Éliminée automatiquement", tone: "bad", disqualified: true };
+    return ATS.verdict(r ? r.global : 0);
+  };
+
+  /**
+   * Analyse complète.
+   * @param answers  réponses aux questions éliminatoires { id: true | false }
+   * @param now      date de référence (tests)
+   */
+  ATS.analyze = function ({ jdText, title, company, cv, letter, ignored, answers, now }) {
     const ign = new Set(ignored || []);
     jdText = (jdText || "").normalize("NFKC");
     const kw = ATS.extractJobKeywords(jdText, title);
-    const ctx = { title: (title || "").trim(), company: (company || "").trim() };
+    const offer = ATS.analyzeOffer(jdText, title, kw);
+    const ctx = { title: (title || "").trim(), company: (company || "").trim(), offer, now: now || new Date() };
     const prep = (d) => d && d.text ? { ...d, rawText: d.text, text: d.text.normalize("NFKC") } : null;
     const cvDoc = prep(cv), lmDoc = prep(letter);
     const cvRes = cvDoc ? analyzeCV(cvDoc, kw, ctx, ign) : null;
     const lmRes = lmDoc ? analyzeLetter(lmDoc, kw, ctx, ign) : null;
+    const ko = ATS.evaluateKnockouts(offer, cvRes ? cvRes.profile : null, cvDoc ? cvDoc.text : lmDoc ? lmDoc.text : "", answers);
     let global = null;
     if (cvRes && lmRes) global = Math.round(0.7 * cvRes.score + 0.3 * lmRes.score);
     else if (cvRes) global = cvRes.score;
     else if (lmRes) global = lmRes.score;
+    const plain = (list) => list.map(({ re, ...x }) => x);
     return {
       date: new Date().toISOString(),
       keywords: {
         skills: kw.skills.map(({ re, body, ...k }) => k),
         others: kw.others.map(({ re, body, ...k }) => k),
       },
+      offer: { ...offer, languages: plain(offer.languages), certifications: plain(offer.certifications) },
+      knockouts: ko.items, status: ko.status,
       cv: cvRes, letter: lmRes, global,
-      recommendations: recommendations(kw, cvRes, lmRes),
+      recommendations: recommendations(kw, cvRes, lmRes, ko),
     };
   };
 

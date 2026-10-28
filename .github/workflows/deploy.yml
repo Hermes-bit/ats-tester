@@ -1,4 +1,5 @@
-# Publie automatiquement le site sur GitHub Pages à chaque push sur la branche main.
+# Lance les tests puis publie le site sur GitHub Pages à chaque push sur la branche main.
+# Si un test échoue, le site n'est pas mis à jour.
 name: Déploiement GitHub Pages
 
 on:
@@ -16,7 +17,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    name: Tests unitaires (Jest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances de test
+        run: npm ci
+
+      - name: Lancer les tests
+        run: npm test
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     environment:
       name: github-pages

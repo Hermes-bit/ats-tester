@@ -9,6 +9,7 @@
     paste: { cv: false, letter: false },
     result: null,
     ignored: new Set(),
+    answers: {}, // réponses aux questions éliminatoires { id: true | false }
     editingId: null,
     rawTab: "cv",
     loading: {}, // lectures de fichiers en cours
@@ -158,7 +159,7 @@
     const cv = getDoc("cv"), letter = getDoc("letter");
     if (jdText.length < 80) { err.textContent = "Ajoute la fiche de poste (au moins quelques lignes)."; jd.focus(); return null; }
     if (!cv && !letter) { err.textContent = "Ajoute ton CV et/ou ta lettre de motivation."; return null; }
-    const result = ATS.analyze({ jdText, title: $("#title").value, company: $("#company").value, cv, letter, ignored: [...state.ignored] });
+    const result = ATS.analyze({ jdText, title: $("#title").value, company: $("#company").value, cv, letter, ignored: [...state.ignored], answers: state.answers });
     return { result, ctx: { jdText, cv, letter } };
   }
   function show(run, scroll) {
@@ -166,7 +167,7 @@
     renderResults(run.result, run.ctx);
     $("#results").hidden = false;
     if (scroll) $("#results").scrollIntoView({ behavior: "smooth", block: "start" });
-    if (scroll && run.result.global >= 75 && ATS.fx) setTimeout(() => ATS.fx.confetti(), 500);
+    if (scroll && run.result.global >= 75 && run.result.status !== "DISQUALIFIED_AUTO" && ATS.fx) setTimeout(() => ATS.fx.confetti(), 500);
   }
   function runAnalysis(scroll) { const run = prepare(); if (run) show(run, scroll); }
 
@@ -178,11 +179,15 @@
     const docs = ctx.cv && ctx.letter ? "ton CV et ta lettre" : ctx.cv ? "ton CV" : "ta lettre";
     const words = (ctx.cv ? wc(ctx.cv.text) : 0) + (ctx.letter ? wc(ctx.letter.text) : 0);
     const nRecos = r.recommendations.length;
+    const pf = r.cv ? r.cv.profile : null;
+    const failed = r.knockouts.filter((k) => k.status === "fail").length;
     const steps = [
       ["📄", "Lecture de " + docs, words.toLocaleString("fr-FR") + " mots"],
-      ["🔍", "Repérage des mots-clés de l'offre", (r.keywords.skills.length + r.keywords.others.length) + " trouvés"],
-      ["🧮", "Comparaison avec " + (r.cv ? "ton CV" : "ta lettre"), main.coverage.filter((c) => c.found).length + " / " + main.coverage.length],
-      ["🛡️", "Contrôles ATS : format, rubriques, dates", ((r.cv ? r.cv.checks.length : 0) + (r.letter ? r.letter.checks.length : 0)) + " tests"],
+      pf ? ["🧩", "Découpage du CV : expériences, diplômes", pf.experiences.length + " exp. · " + pf.formations.length + " dipl."]
+        : ["🔍", "Repérage des mots-clés de l'offre", (r.keywords.skills.length + r.keywords.others.length) + " trouvés"],
+      ["🧮", "Comparaison avec " + (r.cv ? "ton CV" : "ta lettre"), main.coverage.filter((c) => c.found).length + " / " + main.coverage.length + " mots-clés"],
+      ["⛔", "Questions éliminatoires", failed ? failed + " non rempli" + (failed > 1 ? "s" : "") : r.knockouts.length + " critère" + (r.knockouts.length > 1 ? "s" : "")],
+      ["⚖️", "Calcul des 3 piliers (récence, durée)", r.cv ? "CV " + r.cv.score + "/100" : "Lettre " + r.letter.score + "/100"],
       ["✍️", "Rédaction de tes recommandations", nRecos + " conseil" + (nRecos > 1 ? "s" : "")],
     ];
     const box = $("#think"), list = $("#think-steps"), bar = $("#think-bar"), dots = $("#think .dots");
@@ -216,13 +221,18 @@
     setRing($("#ring-global"), r.global);
     setRing($("#ring-cv"), r.cv ? r.cv.score : null);
     setRing($("#ring-letter"), r.letter ? r.letter.score : null);
-    const v = ATS.verdict(r.global);
-    const vEl = $("#verdict"); vEl.textContent = v.label + " " + ({ good: "🚀", mid: "💪", bad: "🛠️" }[v.tone] || ""); vEl.className = "verdict " + v.tone;
+    const v = ATS.verdictFor(r);
+    const vEl = $("#verdict"); vEl.textContent = v.label + " " + (v.disqualified ? "⛔" : { good: "🚀", mid: "💪", bad: "🛠️" }[v.tone] || ""); vEl.className = "verdict " + v.tone;
+    $("#results").classList.toggle("is-disqualified", !!v.disqualified);
     const nSkills = r.keywords.skills.length + r.keywords.others.length;
     const cvFound = r.cv ? r.cv.coverage.filter((c) => c.found).length : 0;
     const cvTot = r.cv ? r.cv.coverage.length : 0;
     $("#summary-line").textContent = nSkills + " mots-clés repérés dans l'offre" + (r.cv ? " · " + cvFound + " / " + cvTot + " présents dans ton CV" : "") + ".";
-    $("#cv-sub").textContent = r.cv ? "Mots-clés " + r.cv.kwScore + " % · Format " + r.cv.formatScore + " %" : "Non fourni";
+    const ps = r.cv ? r.cv.pillarScores : null, pv = (x) => (x === null ? "n/a" : x + " %");
+    $("#cv-sub").textContent = r.cv ? "Compétences " + pv(ps.hard) + " · Contexte " + pv(ps.context) + " · Atouts " + pv(ps.nice) : "Non fourni";
+    renderKnockouts(r);
+    renderPillars(r);
+    renderProfile(r);
     $("#letter-sub").textContent = r.letter ? "Mots-clés " + r.letter.kwScore + " % · Forme " + r.letter.formatScore + " %" : "Non fournie";
 
     // Recommandations
@@ -384,11 +394,18 @@
       scores: { global: r.global, cv: r.cv ? r.cv.score : null, letter: r.letter ? r.letter.score : null },
       missingCv: r.cv ? r.cv.coverage.filter((c) => !c.found && c.cat !== "other").map((c) => c.label) : [],
       ignored: [...state.ignored], analyzedAt: r.date,
+      pillars: r.cv ? r.cv.pillarScores : null, profile: r.cv ? profileToSave(r.cv.profile) : null,
+      knockouts: r.knockouts.map(({ id, question, status, answer, auto }) => ({ id, question, status, answer, auto })),
+      knockoutAnswers: { ...state.answers }, statusAuto: r.status,
     };
+    // Critère éliminatoire non rempli : statut DISQUALIFIED_AUTO, archivage et webhook automatiques
+    const disq = r.status === "DISQUALIFIED_AUTO";
+    if (disq) { app.status = DISQ_STATUS; app.archived = true; statusSel.value = DISQ_STATUS; }
     const saved = ATS.store.upsert(app);
     state.editingId = saved.id;
     $("#btn-save").textContent = "Mettre à jour la candidature";
-    $("#save-msg").textContent = "✓ Enregistrée dans Mes candidatures";
+    $("#save-msg").textContent = disq ? "⛔ Éliminée automatiquement : enregistrée et archivée" + (ATS.store.getWebhook() ? ", webhook envoyé" : "") : "✓ Enregistrée dans Mes candidatures";
+    if (disq) fireWebhook(saved, r);
     updateCount();
   });
 
@@ -432,9 +449,120 @@
   });
   $("#btn-claim-no").addEventListener("click", () => { ATS.store.dismissLegacy(); renderClaim(); });
 
+  const DISQ_STATUS = "Éliminée (auto)";
+  // Profil enregistré avec la candidature : tout sauf le texte brut, déjà gardé dans cvText
+  function profileToSave(p) {
+    const { cv_texte_brut, ...candidat } = p.candidat;
+    return { ...p, candidat };
+  }
+  function fireWebhook(app, r) {
+    const url = ATS.store.getWebhook();
+    if (!url) return;
+    const payload = {
+      event: "candidature.disqualified_auto", status: "DISQUALIFIED_AUTO", source: "ats-tester", date: new Date().toISOString(),
+      id: app.id, company: app.company, title: app.title, url: app.url || "",
+      reasons: r.knockouts.filter((k) => k.status === "fail").map((k) => k.question), scores: app.scores,
+    };
+    // Envoi simple (text/plain) accepté par Zapier, Make, n8n… sans requête préalable CORS
+    try { fetch(url, { method: "POST", mode: "no-cors", keepalive: true, headers: { "Content-Type": "text/plain;charset=UTF-8" }, body: JSON.stringify(payload) }).catch(() => {}); } catch (e) {}
+  }
+
+  /* ---------- Questions éliminatoires ---------- */
+  function clip(t, n) { t = String(t || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; }
+  function renderKnockouts(r) {
+    const items = r.knockouts || [];
+    const failed = items.filter((k) => k.status === "fail"), unknown = items.filter((k) => k.status === "unknown");
+    const banner = $("#ko-banner");
+    banner.className = "ko-banner " + (failed.length ? "fail" : unknown.length ? "unknown" : "pass");
+    banner.innerHTML = failed.length
+      ? "⛔ <b>Éliminée automatiquement</b> (DISQUALIFIED_AUTO) : " + failed.length + " critère" + (failed.length > 1 ? "s" : "") + " non rempli" + (failed.length > 1 ? "s" : "") + ". Si tu l'enregistres, elle sera archivée automatiquement."
+      : unknown.length ? "❔ " + unknown.length + " question" + (unknown.length > 1 ? "s" : "") + " sans réponse : l'ATS te les posera au moment de postuler. Réponds pour simuler son tri."
+      : "✅ Aucun critère éliminatoire bloquant.";
+    $("#ko-list").innerHTML = items.map((k) => {
+      const value = k.answer !== null && k.answer !== undefined ? k.answer : k.auto;
+      const autoTag = (k.answer === null || k.answer === undefined) && k.auto !== null ? ' <span class="ko-auto">détecté</span>' : "";
+      return '<li class="ko ' + k.status + '" data-ko="' + esc(k.id) + '">' +
+        '<span class="ko-ic" aria-hidden="true">' + (k.status === "pass" ? "✓" : k.status === "fail" ? "✗" : "?") + "</span>" +
+        '<div class="ko-q"><b>' + esc(k.question) + "</b>" +
+        (k.source ? '<span class="ko-src">' + (k.source === "Question standard des ATS" ? esc(k.source) : "Offre : « " + esc(clip(k.source, 150)) + " »") + "</span>" : "") +
+        (k.detected ? '<span class="ko-det">' + esc(k.detected) + "</span>" : "") + "</div>" +
+        '<div class="ko-ans" role="group" aria-label="Ta réponse">' +
+        '<button type="button" data-v="1" aria-pressed="' + (value === true) + '">Oui</button>' +
+        '<button type="button" data-v="0" aria-pressed="' + (value === false) + '">Non</button>' + autoTag + "</div></li>";
+    }).join("");
+    $$("#ko-list .ko-ans button").forEach((b) => b.addEventListener("click", () => {
+      const id = b.closest("li").dataset.ko, v = b.dataset.v === "1";
+      if (state.answers[id] === v) delete state.answers[id]; else state.answers[id] = v;
+      runAnalysis(false);
+    }));
+  }
+
+  /* ---------- Score en 3 piliers ---------- */
+  const frNum = (x) => String(x).replace(".", ",");
+  function renderPillars(r) {
+    const card = $("#pillars-card");
+    card.hidden = !r.cv;
+    if (!r.cv) return;
+    const P = r.cv.pillars, fm = ATS.formatMonths;
+    const coefTag = (i) => !i.found ? "" : i.recence_annee
+      ? '<em class="tag-coef ' + (i.coef >= 1.25 ? "hi" : i.coef < 1 ? "lo" : "mid") + '" title="Dernier usage lu : ' + i.recence_annee + '">' + i.recence_annee + " · ×" + frNum(i.coef) + "</em>"
+      : '<em class="tag-coef na" title="Citée sans expérience datée : récence inconnue">sans date · ×1</em>';
+    const durTag = (i) => i.required_years ? '<em class="tag-dur ' + (i.durFactor >= 1 ? "ok" : "ko") + '" title="Durée cumulée des expériences où la compétence apparaît">' + fm(i.months) + " / " + i.required_years + " an" + (i.required_years > 1 ? "s" : "") + "</em>" : "";
+    const skillLi = (i) => '<li class="' + (i.found ? "yes" : "no") + '"' + (i.contexte ? ' title="' + esc(i.contexte) + '"' : "") + '><span>' + (i.found ? "✓ " : "✗ ") + esc(i.label) + '</span><span class="tags">' + coefTag(i) + durTag(i) + "</span></li>";
+    const col = (key, name, emoji, body) => {
+      const p = P[key], s = p.score === null ? null : Math.round(p.score * 100);
+      const eff = s !== null && Math.abs(p.effective - p.weight) > 0.001 ? " · " + Math.round(p.effective * 100) + " % ici" : "";
+      return '<section class="pillar ' + (s === null ? "na" : tone(s)) + '"><header><span class="pillar-emoji" aria-hidden="true">' + emoji + "</span><div><b>" + name + "</b><small>" + Math.round(p.weight * 100) + " % de la note" + eff + '</small></div><span class="pillar-score">' + (s === null ? "n/a" : s + "<i>%</i>") + "</span></header>" +
+        '<div class="pillar-bar"><i style="width:' + (s || 0) + '%"></i></div>' +
+        (s === null ? '<p class="muted small">Aucun critère de ce type dans l\'offre : son poids est réparti sur les autres piliers.</p>' : body) + "</section>";
+    };
+    const hardBody = '<ul class="pillar-list">' + P.hard.items.slice().sort((a, b) => (b.found - a.found) || (b.weight - a.weight)).map(skillLi).join("") + "</ul>";
+    const ctxBody = '<ul class="pillar-list">' + P.context.parts.map((p) => '<li class="' + (p.score >= 0.75 ? "yes" : p.score >= 0.4 ? "mid" : "no") + '"><span>' + esc(p.label) + '<small>' + esc(p.detail) + '</small></span><span class="tags"><em class="tag-pct">' + Math.round(p.score * 100) + " %</em></span></li>").join("") + "</ul>";
+    const niceBody = '<ul class="pillar-list">' + P.nice.bonus.map(skillLi).join("") +
+      P.nice.certs.map((c) => '<li class="' + (c.found ? "yes" : "no") + '"><span>' + (c.found ? "✓ " : "✗ ") + esc(c.label) + "</span></li>").join("") +
+      (P.nice.degree ? '<li class="' + (P.nice.degree.score >= 1 ? "yes" : P.nice.degree.score > 0 ? "mid" : "no") + '"><span>Diplôme ' + esc(P.nice.degree.required) + "<small>Lu dans ton CV : " + esc(P.nice.degree.found || "aucun diplôme reconnu") + "</small></span></li>" : "") + "</ul>";
+    $("#pillars").innerHTML = col("hard", "Compétences techniques requises", "🛠️", hardBody) + col("context", "Contexte et savoir-être", "🧭", ctxBody) + col("nice", "Atouts et certifications", "🎖️", niceBody);
+  }
+
+  /* ---------- Ce que l'ATS a compris du CV ---------- */
+  function monthYear(d) { if (!d) return ""; const x = new Date(d + "T12:00:00"); return isNaN(x) ? d : x.toLocaleDateString("fr-FR", { month: "short", year: "numeric" }); }
+  function renderProfile(r) {
+    const card = $("#profile-card");
+    card.hidden = !r.cv;
+    if (!r.cv) return;
+    const p = r.cv.profile, c = p.candidat, fm = ATS.formatMonths;
+    $("#profile-summary").textContent = p.experiences.length + " expérience" + (p.experiences.length > 1 ? "s" : "") + " · " + fm(p.total_experience_mois) + " d'expérience · " + (p.niveau_max || "diplôme non lu");
+    const loc = [c.localisation.code_postal, c.localisation.ville].filter(Boolean).join(" ");
+    const rows = [["Nom", c.nom], ["Prénom", c.prenom], ["E-mail", c.email], ["Téléphone (E.164)", c.telephone], ["Ville", loc], ["Pays", c.localisation.pays],
+      ["Titre du CV", p.headline ? p.headline + (p.headline_normalise ? " → " + p.headline_normalise : "") : ""], ["Autorisation de travail", c.statut_visa],
+      ["Salaire souhaité", c.salaire_souhaite ? c.salaire_souhaite.toLocaleString("fr-FR") + " € / an" : ""], ["Disponibilité", c.date_disponibilite ? fmtDate(c.date_disponibilite) : ""]];
+    $("#pf-candidat").innerHTML = rows.map(([k, v]) => "<dt>" + k + "</dt><dd" + (v ? "" : ' class="muted"') + ">" + (v ? esc(v) : "non trouvé") + "</dd>").join("");
+    $("#pf-formations").innerHTML = p.formations.length ? p.formations.map((f) => '<div class="pf-edu"><span class="lvl">' + esc(f.niveau_normalized) + "</span><div><b>" + esc(f.nom_diplome) + "</b><small>" + esc([f.institution, f.en_cours ? "en cours" : f.annee_obtention].filter(Boolean).join(" · ") || "établissement et année non lus") + "</small></div></div>").join("") : '<p class="muted small">Aucun diplôme reconnu.</p>';
+    $("#pf-experiences tbody").innerHTML = p.experiences.length ? p.experiences.map((e) =>
+      "<tr><td class=\"wrap-cell\"><b>" + (e.intitule_poste ? esc(e.intitule_poste) : '<span class="muted">non lu</span>') + "</b></td>" +
+      "<td>" + (e.intitule_normalise ? '<code class="code-chip">' + esc(e.intitule_normalise) + "</code>" : '<span class="muted small">non reconnu</span>') + "</td>" +
+      '<td class="wrap-cell">' + (e.entreprise ? esc(e.entreprise) : '<span class="muted">—</span>') + "</td>" +
+      "<td>" + monthYear(e.date_debut) + "</td><td>" + (e.est_poste_actuel ? "aujourd'hui" : monthYear(e.date_fin)) + "</td>" +
+      "<td>" + (e.duree_mois ? (e.dates_estimees ? "≈ " : "") + fm(e.duree_mois) : '<span class="muted">?</span>') + "</td></tr>").join("")
+      : '<tr><td colspan="6" class="muted">Aucune expérience datée n\'a pu être découpée.</td></tr>';
+    const skills = p.competences.slice().sort((a, b) => (b.recence_annee || 0) - (a.recence_annee || 0));
+    $("#pf-skills").innerHTML = skills.length ? skills.map((k) => '<span class="pf-skill' + (k.recence_annee ? "" : " undated") + '" title="' + esc(k.contexte_texte || "") + '">' + esc(k.nom_skill) + " <small>" + (k.recence_annee || "sans date") + (k.mois_experience ? " · " + fm(k.mois_experience) : "") + "</small></span>").join("") : '<p class="muted small">Aucune compétence du dictionnaire repérée.</p>';
+    $("#pf-unparsed").innerHTML = p.unparsed_blocks.length ? '<details class="pf-unparsed"><summary>⚠️ Texte non découpé, gardé tel quel et cherchable : ' + p.unparsed_blocks.length + " bloc" + (p.unparsed_blocks.length > 1 ? "s" : "") + "</summary>" +
+      p.unparsed_blocks.map((b) => '<div class="blk"><b>' + esc(b.header || "Bloc") + "</b> · " + esc(b.reason) + "<pre>" + esc(b.text) + "</pre></div>").join("") + "</details>" : "";
+  }
+
   /* ---------- Historique ---------- */
   function updateCount() { $("#history-count").textContent = ATS.store.list().length; }
   $("#search").addEventListener("input", renderHistory);
+  $("#show-archived").addEventListener("change", renderHistory);
+  // Webhook d'archivage automatique (propre à chaque espace)
+  $("#hook-url").value = ATS.store.getWebhook();
+  $("#hook-save").addEventListener("click", () => {
+    const v = $("#hook-url").value.trim(), msg = $("#hook-msg");
+    if (v && !/^https:\/\/[^\s]+$/i.test(v)) { msg.innerHTML = '<span class="error">L\'adresse doit commencer par https://</span>'; return; }
+    ATS.store.setWebhook(v);
+    msg.textContent = v ? "✓ Webhook enregistré : il sera appelé à chaque candidature éliminée automatiquement." : "Webhook désactivé.";
+  });
   filterSel.addEventListener("change", renderHistory);
 
   function fmtDate(d) { if (!d) return "—"; const x = new Date(d.length === 10 ? d + "T12:00:00" : d); return isNaN(x) ? d : x.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -442,11 +570,13 @@
 
   function renderHistory() {
     const all = ATS.store.list();
-    const q = ATS.norm($("#search").value), f = filterSel.value;
-    const list = all.filter((a) => (!f || a.status === f) && (!q || ATS.norm(a.company + " " + a.title + " " + (a.notes || "")).includes(q)));
+    const f = filterSel.value, match = ATS.search.compile($("#search").value), showArch = $("#show-archived").checked || f === DISQ_STATUS;
+    const list = all.filter((a) => (showArch || !a.archived) && (!f || a.status === f) && match(a));
+    const nArch = all.filter((a) => a.archived).length;
+    $("#search-info").textContent = (list.length !== all.length ? list.length + " sur " + all.length + " candidature" + (all.length > 1 ? "s" : "") : all.length + " candidature" + (all.length > 1 ? "s" : "")) + (nArch && !showArch ? " · " + nArch + " archivée" + (nArch > 1 ? "s" : "") + " masquée" + (nArch > 1 ? "s" : "") : "");
     const tbody = $("#apps tbody");
     tbody.innerHTML = list.map((a) =>
-      '<tr data-id="' + esc(a.id) + '"><td>' + fmtDate(a.appliedAt) + '</td><td class="wrap-cell"><b>' + esc(a.company) + '</b></td><td class="wrap-cell">' + esc(a.title) + "</td>" +
+      '<tr data-id="' + esc(a.id) + '"' + (a.archived ? ' class="is-archived"' : "") + '><td>' + fmtDate(a.appliedAt) + '</td><td class="wrap-cell"><b>' + esc(a.company) + "</b>" + (a.archived ? ' <span class="tag tag-arch">archivée</span>' : "") + '</td><td class="wrap-cell">' + esc(a.title) + "</td>" +
       "<td><select data-status>" + ATS.store.STATUSES.map((s) => "<option" + (s === a.status ? " selected" : "") + ">" + esc(s) + "</option>").join("") + "</select></td>" +
       "<td>" + pill(a.scores && a.scores.cv) + "</td><td>" + pill(a.scores && a.scores.letter) + '</td><td><button class="btn btn-ghost btn-small" data-open>Ouvrir</button></td></tr>').join("");
     $("#empty").hidden = all.length > 0;
@@ -462,7 +592,7 @@
 
   function renderStats() {
     const all = ATS.store.list();
-    const sent = all.filter((a) => a.status !== "À envoyer").length;
+    const sent = all.filter((a) => a.status !== "À envoyer" && a.status !== DISQ_STATUS).length;
     const itw = all.filter((a) => a.status === "Entretien" || a.status === "Offre reçue").length;
     const cvScores = all.map((a) => a.scores && a.scores.cv).filter((x) => typeof x === "number");
     const avg = cvScores.length ? Math.round(cvScores.reduce((a, b) => a + b, 0) / cvScores.length) : "—";
@@ -489,6 +619,9 @@
       '<div class="fields"><label class="field"><span>Statut</span><select id="d-status">' + ATS.store.STATUSES.map((s) => "<option" + (s === a.status ? " selected" : "") + ">" + esc(s) + "</option>").join("") + '</select></label>' +
       '<label class="field"><span>Date de candidature</span><input id="d-date" type="date" value="' + esc(a.appliedAt || "") + '"></label>' +
       '<label class="field field-wide"><span>Notes</span><textarea id="d-notes" rows="3">' + esc(a.notes || "") + "</textarea></label></div>" +
+      (a.knockouts && a.knockouts.some((k) => k.status === "fail") ? '<div class="notice ko-notice">⛔ Éliminée automatiquement : ' + a.knockouts.filter((k) => k.status === "fail").map((k) => esc(k.question)).join(" ") + "</div>" : "") +
+      (a.pillars ? '<div class="muted small">Piliers du CV : compétences ' + (a.pillars.hard === null ? "n/a" : a.pillars.hard + " %") + " · contexte " + (a.pillars.context === null ? "n/a" : a.pillars.context + " %") + " · atouts " + (a.pillars.nice === null ? "n/a" : a.pillars.nice + " %") + "</div>" : "") +
+      '<label class="check"><input type="checkbox" id="d-archived"' + (a.archived ? " checked" : "") + "> Archivée</label>" +
       (a.missingCv && a.missingCv.length ? '<div><div class="label" style="margin-bottom:6px">Mots-clés absents du CV lors de l\'analyse</div><div class="chips">' + a.missingCv.map((m) => '<span class="chip">' + esc(m) + "</span>").join("") + "</div></div>" : "") +
       "<details><summary>Fiche de poste enregistrée</summary><pre>" + esc(a.jdText || "") + "</pre></details>" +
       (a.cvText ? "<details><summary>Texte du CV envoyé</summary><pre>" + esc(a.cvText) + "</pre></details>" : "") +
@@ -499,7 +632,7 @@
     dlg.showModal();
   }
   $("#dlg-save").addEventListener("click", () => {
-    ATS.store.upsert({ id: state.dialogId, status: $("#d-status").value, appliedAt: $("#d-date").value, notes: $("#d-notes").value });
+    ATS.store.upsert({ id: state.dialogId, status: $("#d-status").value, appliedAt: $("#d-date").value, notes: $("#d-notes").value, archived: $("#d-archived").checked });
     dlg.close(); renderHistory();
   });
   $("#dlg-delete").addEventListener("click", () => {
@@ -524,6 +657,7 @@
       renderDocStatus(k);
     });
     state.ignored = new Set(a.ignored || []);
+    state.answers = { ...(a.knockoutAnswers || {}) };
     state.editingId = a.id;
     statusSel.value = a.status; $("#save-date").value = a.appliedAt || ""; $("#save-notes").value = a.notes || "";
     dlg.close();
@@ -562,7 +696,7 @@
     (keepCv ? ["letter"] : ["cv", "letter"]).forEach((k) => {
       state.docs[k] = null; $("#paste-" + k).value = ""; togglePaste(k, false);
     });
-    state.result = null; state.ignored = new Set(); state.editingId = null;
+    state.result = null; state.ignored = new Set(); state.answers = {}; state.editingId = null;
     $("#results").hidden = true; $("#analyze-error").textContent = ""; $("#save-date").value = ""; statusSel.value = "Envoyée";
   }
   $("#btn-reset").addEventListener("click", () => resetForm(false));

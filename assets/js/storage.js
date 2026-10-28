@@ -113,7 +113,7 @@ window.ATS = window.ATS || {};
   }
 
   ATS.store = {
-    STATUSES: ["À envoyer", "Envoyée", "Relancée", "Entretien", "Refusée", "Offre reçue"],
+    STATUSES: ["À envoyer", "Envoyée", "Relancée", "Entretien", "Refusée", "Offre reçue", "Éliminée (auto)"],
     isAvailable() { load(); return available; },
     list() { return load().sort((a, b) => (b.appliedAt || b.createdAt || "").localeCompare(a.appliedAt || a.createdAt || "")); },
     get(id) { return load().find((a) => a.id === id) || null; },
@@ -172,6 +172,10 @@ window.ATS = window.ATS || {};
       return n;
     },
     dismissLegacy() { writeJSON(DISMISSED, true); },
+
+    /* Webhook appelé quand une candidature est éliminée automatiquement (réglage propre à l'espace) */
+    getWebhook() { return KEY ? readJSON(KEY + ".webhook", "") || "" : ""; },
+    setWebhook(url) { if (KEY) { if (url) writeJSON(KEY + ".webhook", url); else { try { localStorage.removeItem(KEY + ".webhook"); } catch (e) {} } } },
 
     /* Synchronisation */
     cloud: CLOUD,

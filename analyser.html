@@ -6,12 +6,12 @@
   <title>Analyser ma candidature – ATS Tester</title>
   <meta name="description" content="Compare ton CV et ta lettre de motivation à une fiche de poste, comme un logiciel de recrutement (ATS). Tout reste dans ton navigateur.">
   <meta name="theme-color" content="#07060F">
-  <link rel="icon" href="assets/img/favicon.svg?v=9" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=9">
+  <link rel="icon" href="assets/img/favicon.svg?v=10" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=10">
   <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/style.css?v=9">
-  <script src="assets/js/config.js?v=9"></script>
-  <script src="assets/js/auth.js?v=9"></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=10">
+  <script src="assets/js/config.js?v=10"></script>
+  <script src="assets/js/auth.js?v=10"></script>
   <script>ATS.auth.guard(location.hash === "#candidatures" ? "analyser.html#candidatures" : "analyser.html");</script>
 </head>
 <body class="page-app">
@@ -20,7 +20,7 @@
   <header class="topbar">
     <div class="wrap topbar-inner">
       <a class="brand" href="index.html" aria-label="ATS Tester, accueil">
-        <img class="brand-mark" src="assets/img/logo.svg?v=9" width="42" height="42" alt="">
+        <img class="brand-mark" src="assets/img/logo.svg?v=10" width="42" height="42" alt="">
         <div>
           <div class="brand-name">ATS Tester</div>
           <div class="brand-tag">Le messager de ta candidature</div>
@@ -178,6 +178,23 @@
           </div>
         </article>
 
+        <article class="card ko-card" id="ko-card">
+          <div class="card-title-row">
+            <h2 class="card-title">Questions éliminatoires</h2>
+            <span class="muted small">Un « non » et l'ATS écarte la candidature automatiquement.</span>
+          </div>
+          <div class="ko-banner" id="ko-banner" role="status"></div>
+          <ul class="ko-list" id="ko-list"></ul>
+        </article>
+
+        <article class="card pillars-card" id="pillars-card">
+          <div class="card-title-row">
+            <h2 class="card-title">Score du CV en 3 piliers</h2>
+            <span class="muted small">Récence d'une compétence : année en cours ×1,5 · plus de 4 ans ×0,5</span>
+          </div>
+          <div class="pillars" id="pillars"></div>
+        </article>
+
         <article class="card">
           <div class="card-title-row">
             <h2 class="card-title">Recommandations</h2>
@@ -197,6 +214,27 @@
               <tbody></tbody>
             </table>
           </div>
+        </article>
+
+        <article class="card profile-card" id="profile-card">
+          <div class="card-title-row">
+            <h2 class="card-title">Ce que l'ATS a compris de ton CV</h2>
+            <span class="muted small" id="profile-summary"></span>
+          </div>
+          <div class="profile-grid">
+            <section><h3 class="sub">Candidat</h3><dl class="kv" id="pf-candidat"></dl></section>
+            <section><h3 class="sub">Formation</h3><div class="pf-edus" id="pf-formations"></div></section>
+          </div>
+          <h3 class="sub">Expériences (durée calculée)</h3>
+          <div class="table-wrap">
+            <table class="pf-table" id="pf-experiences">
+              <thead><tr><th>Poste lu</th><th>Métier normalisé</th><th>Entreprise</th><th>Début</th><th>Fin</th><th>Durée</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <h3 class="sub">Compétences lues (année du dernier usage)</h3>
+          <div class="pf-skills" id="pf-skills"></div>
+          <div id="pf-unparsed"></div>
         </article>
 
         <article class="card">
@@ -293,13 +331,18 @@
       <div class="stats" id="stats"></div>
       <article class="card">
         <div class="toolbar">
-          <input id="search" type="search" placeholder="Rechercher une entreprise, un poste…">
+          <input id="search" type="search" placeholder="Recherche : QGIS AND (Rennes OR Nantes) NOT stage" aria-describedby="search-help">
           <select id="filter-status"><option value="">Tous les statuts</option></select>
           <div class="toolbar-right">
             <button id="btn-export" class="btn btn-ghost btn-small">Exporter (JSON)</button>
             <label class="btn btn-ghost btn-small file-btn">Importer<input id="import-file" type="file" accept=".json,application/json" hidden></label>
           </div>
         </div>
+        <div class="search-meta">
+          <label class="check"><input type="checkbox" id="show-archived"> Afficher les archivées</label>
+          <span class="muted small" id="search-info"></span>
+        </div>
+        <p class="hint search-help" id="search-help">Recherche avancée : <code>ET</code> / <code>AND</code>, <code>OU</code> / <code>OR</code>, <code>SAUF</code> / <code>NOT</code> (ou <code>-mot</code>), parenthèses, <code>"expression exacte"</code> et champs <code>entreprise:</code> <code>poste:</code> <code>statut:</code> <code>offre:</code> <code>cv:</code> <code>competences:</code> <code>notes:</code>.</p>
         <div class="table-wrap">
           <table class="apps" id="apps">
             <thead><tr><th>Date</th><th>Entreprise</th><th>Poste</th><th>Statut</th><th>CV</th><th>Lettre</th><th></th></tr></thead>
@@ -310,6 +353,15 @@
           <p><b>Aucune candidature enregistrée pour l'instant.</b></p>
           <p class="muted">Analyse une offre, puis clique sur « Enregistrer dans Mes candidatures ».</p>
         </div>
+        <details class="hook">
+          <summary>⚙️ Archivage automatique (webhook)</summary>
+          <p class="muted small">Quand une candidature est éliminée par une question éliminatoire, elle passe au statut « Éliminée (auto) » et est archivée. Tu peux aussi prévenir un service externe (Zapier, Make, n8n, Google Apps Script…) : il recevra l'entreprise, le poste et les critères non remplis, jamais le texte de ton CV.</p>
+          <div class="hook-row">
+            <input id="hook-url" type="url" placeholder="https://hooks.zapier.com/…" autocomplete="off">
+            <button id="hook-save" class="btn btn-ghost btn-small" type="button">Enregistrer</button>
+          </div>
+          <p class="ok-msg small" id="hook-msg" role="status"></p>
+        </details>
         <p class="hint" id="history-hint">Tes candidatures sont gardées dans ton espace, sur cet appareil. Exporte-les régulièrement pour en garder une copie.</p>
       </article>
     </section>
@@ -340,7 +392,7 @@
     <div class="think-card">
       <div class="think-visual" aria-hidden="true">
         <div class="think-doc"><i></i><i></i><i></i><i></i><i></i><i></i><span class="think-scan"></span></div>
-        <img class="think-logo" src="assets/img/logo.svg?v=9" alt="">
+        <img class="think-logo" src="assets/img/logo.svg?v=10" alt="">
       </div>
       <h2 id="think-title"><span id="think-label">Analyse en cours</span><span class="dots" aria-hidden="true"></span></h2>
       <p class="muted" id="think-sub">Le messager lit ta candidature comme un recruteur pressé.</p>
@@ -352,7 +404,7 @@
   <footer class="footer">
     <div class="wrap footer-inner">
       <div class="footer-brand">
-        <img src="assets/img/logo.svg?v=9" width="36" height="36" alt="">
+        <img src="assets/img/logo.svg?v=10" width="36" height="36" alt="">
         <div>
           <div class="footer-name">ATS Tester</div>
           <div class="footer-tag">Le messager de ta candidature</div>
@@ -373,12 +425,15 @@
 
   <script src="assets/vendor/pdf.min.js"></script>
   <script src="assets/vendor/mammoth.browser.min.js"></script>
-  <script src="assets/js/keywords.js?v=9"></script>
-  <script src="assets/js/extract.js?v=9"></script>
-  <script src="assets/js/analyzer.js?v=9"></script>
-  <script src="assets/js/prompt.js?v=9"></script>
-  <script src="assets/js/storage.js?v=9"></script>
-  <script src="assets/js/fx.js?v=9"></script>
-  <script src="assets/js/app.js?v=9"></script>
+  <script src="assets/js/keywords.js?v=10"></script>
+  <script src="assets/js/extract.js?v=10"></script>
+  <script src="assets/js/analyzer.js?v=10"></script>
+  <script src="assets/js/profile.js?v=10"></script>
+  <script src="assets/js/offer.js?v=10"></script>
+  <script src="assets/js/search.js?v=10"></script>
+  <script src="assets/js/prompt.js?v=10"></script>
+  <script src="assets/js/storage.js?v=10"></script>
+  <script src="assets/js/fx.js?v=10"></script>
+  <script src="assets/js/app.js?v=10"></script>
 </body>
 </html>

@@ -77,8 +77,11 @@ window.ATS = window.ATS || {};
 
     // ---- Résultats de l'analyse
     L.push("", "## Résultat de mon test ATS", "J'ai passé ma candidature dans un simulateur d'ATS. Voici ses conclusions :");
-    if (r.global !== null && r.global !== undefined) L.push("- Indice global : " + r.global + "/100 (" + ATS.verdict(r.global).label + ")");
-    if (r.cv) L.push("- CV : " + r.cv.score + "/100 (mots-clés " + r.cv.kwScore + " %, format " + r.cv.formatScore + " %)");
+    if (r.global !== null && r.global !== undefined) L.push("- Indice global : " + r.global + "/100 (" + (ATS.verdictFor ? ATS.verdictFor(r) : ATS.verdict(r.global)).label + ")");
+    if (r.cv && r.cv.pillarScores) {
+      const pv = (x) => (x === null ? "non applicable" : x + " %");
+      L.push("- CV : " + r.cv.score + "/100, calculé en 3 piliers : compétences techniques requises " + pv(r.cv.pillarScores.hard) + " (50 % de la note), contexte et savoir-être " + pv(r.cv.pillarScores.context) + " (30 %), atouts et certifications " + pv(r.cv.pillarScores.nice) + " (20 %). Lisibilité du document : " + r.cv.formatScore + " %.");
+    } else if (r.cv) L.push("- CV : " + r.cv.score + "/100 (mots-clés " + r.cv.kwScore + " %, format " + r.cv.formatScore + " %)");
     if (r.letter) L.push("- Lettre : " + r.letter.score + "/100 (mots-clés " + r.letter.kwScore + " %, forme " + r.letter.formatScore + " %)");
 
     let firstMissing = null;
@@ -109,11 +112,27 @@ window.ATS = window.ATS || {};
     const issues = [];
     const addIssues = (res, name) => {
       if (!res) return;
-      res.checks.filter((c) => c.status !== "ok").forEach((c) => issues.push("- " + name + " – " + c.label + " : " + c.detail + ". " + c.advice));
+      res.checks.filter((c) => c.status !== "ok").forEach((c) => issues.push(clean("- " + name + " – " + c.label + " : " + c.detail + ". " + c.advice)));
     };
     if (doCv) addIssues(r.cv, "CV");
     if (doLetter) addIssues(r.letter, "Lettre");
     if (issues.length) L.push("", "### Problèmes détectés", ...issues);
+
+    // ---- Critères éliminatoires, récence et durée calculées par l'ATS
+    const ko = (r.knockouts || []).filter((k) => k.status !== "pass" && k.id !== "work_auth");
+    if (ko.length) L.push("", "### Critères éliminatoires de l'offre", ...ko.map((k) => "- " + k.question + " → " + (k.status === "fail" ? "NON : l'ATS élimine la candidature automatiquement" : "information absente de mon CV")));
+    if (doCv && r.cv && r.cv.pillars) {
+      const P = r.cv.pillars, out = [];
+      P.hard.items.filter((i) => i.found && i.required_years && i.durFactor < 1).forEach((i) => out.push("- " + i.label + " : l'offre demande " + i.required_years + " an" + (i.required_years > 1 ? "s" : "") + ", mon CV en montre " + ATS.formatMonths(i.months) + " (durée cumulée des expériences datées où la compétence apparaît)."));
+      const stale = P.hard.items.filter((i) => i.found && i.coef < 1);
+      if (stale.length) out.push("- Compétences jugées anciennes (dernier usage il y a plus de 4 ans) : " + stale.map((i) => i.label + " (" + i.recence_annee + ")").join(", ") + ".");
+      const undated = P.hard.items.filter((i) => i.found && !i.recence_annee);
+      if (undated.length) out.push("- Compétences citées seulement dans une liste, sans expérience datée : " + undated.map((i) => i.label).join(", ") + ".");
+      const t = P.context.title;
+      if (t && t.offer_code && t.score < 0.6) out.push("- Métier de l'offre (normalisé) : " + t.offer_label + " ; métiers lus dans mes intitulés : " + (t.cv_codes.join(", ") || "aucun") + ".");
+      if (out.length) L.push("", "### Ce que l'ATS a calculé (récence et durée des compétences)",
+        "L'ATS date chaque compétence d'après les expériences où elle apparaît. Aide-moi à placer chaque compétence que je maîtrise dans la bonne expérience datée, sans rien inventer.", ...out);
+    }
 
     // ---- Documents
     L.push("", "## Fiche de poste", quote(o.jdText || ""));
