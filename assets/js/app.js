@@ -144,21 +144,62 @@
       await Promise.allSettled(pending);
       btn.disabled = false; btn.textContent = "Analyser ma candidature";
     }
-    runAnalysis(true);
+    const run = prepare();
+    if (!run) return;
+    btn.disabled = true;
+    await think(run);
+    btn.disabled = false;
+    show(run, true);
   });
-  function runAnalysis(scroll) {
+  function prepare() {
     const err = $("#analyze-error");
     err.textContent = "";
     const jdText = jd.value.trim();
     const cv = getDoc("cv"), letter = getDoc("letter");
-    if (jdText.length < 80) { err.textContent = "Ajoute la fiche de poste (au moins quelques lignes)."; jd.focus(); return; }
-    if (!cv && !letter) { err.textContent = "Ajoute ton CV et/ou ta lettre de motivation."; return; }
+    if (jdText.length < 80) { err.textContent = "Ajoute la fiche de poste (au moins quelques lignes)."; jd.focus(); return null; }
+    if (!cv && !letter) { err.textContent = "Ajoute ton CV et/ou ta lettre de motivation."; return null; }
     const result = ATS.analyze({ jdText, title: $("#title").value, company: $("#company").value, cv, letter, ignored: [...state.ignored] });
-    state.result = result;
-    renderResults(result, { jdText, cv, letter });
+    return { result, ctx: { jdText, cv, letter } };
+  }
+  function show(run, scroll) {
+    state.result = run.result;
+    renderResults(run.result, run.ctx);
     $("#results").hidden = false;
     if (scroll) $("#results").scrollIntoView({ behavior: "smooth", block: "start" });
-    if (scroll && result.global >= 75 && ATS.fx) setTimeout(() => ATS.fx.confetti(), 500);
+    if (scroll && run.result.global >= 75 && ATS.fx) setTimeout(() => ATS.fx.confetti(), 500);
+  }
+  function runAnalysis(scroll) { const run = prepare(); if (run) show(run, scroll); }
+
+  // Temps de réflexion : les étapes défilent avec les vrais chiffres de l'analyse
+  const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function think({ result: r, ctx }) {
+    const main = r.cv || r.letter;
+    const docs = ctx.cv && ctx.letter ? "ton CV et ta lettre" : ctx.cv ? "ton CV" : "ta lettre";
+    const words = (ctx.cv ? wc(ctx.cv.text) : 0) + (ctx.letter ? wc(ctx.letter.text) : 0);
+    const nRecos = r.recommendations.length;
+    const steps = [
+      ["📄", "Lecture de " + docs, words.toLocaleString("fr-FR") + " mots"],
+      ["🔍", "Repérage des mots-clés de l'offre", (r.keywords.skills.length + r.keywords.others.length) + " trouvés"],
+      ["🧮", "Comparaison avec " + (r.cv ? "ton CV" : "ta lettre"), main.coverage.filter((c) => c.found).length + " / " + main.coverage.length],
+      ["🛡️", "Contrôles ATS : format, rubriques, dates", ((r.cv ? r.cv.checks.length : 0) + (r.letter ? r.letter.checks.length : 0)) + " tests"],
+      ["✍️", "Rédaction de tes recommandations", nRecos + " conseil" + (nRecos > 1 ? "s" : "")],
+    ];
+    const box = $("#think"), list = $("#think-steps"), bar = $("#think-bar"), dots = $("#think .dots");
+    list.innerHTML = steps.map(([ic, label, val]) => '<li><span class="st" aria-hidden="true"></span><span>' + ic + " " + esc(label) + '</span><span class="val">' + esc(val) + "</span></li>").join("");
+    $("#think-label").textContent = "Analyse en cours"; dots.hidden = false; bar.style.width = "0";
+    box.hidden = false; document.body.style.overflow = "hidden";
+    const items = $$("li", list);
+    for (let i = 0; i < items.length; i++) {
+      items[i].classList.add("is-active");
+      await wait(reduceMotion ? 60 : 450 + Math.random() * 350);
+      items[i].classList.replace("is-active", "is-done");
+      $(".st", items[i]).textContent = "✓";
+      bar.style.width = ((i + 1) / items.length) * 100 + "%";
+    }
+    $("#think-label").textContent = "C'est prêt ✨"; dots.hidden = true;
+    await wait(reduceMotion ? 50 : 500);
+    box.hidden = true; document.body.style.overflow = "";
   }
 
   function tone(score) { return score === null || score === undefined ? "none" : ATS.verdict(score).tone; }
@@ -351,6 +392,46 @@
     updateCount();
   });
 
+  /* ---------- Espace personnel ---------- */
+  const me = ATS.auth.user();
+  if (me) {
+    const name = ATS.auth.displayName(me);
+    $("#user-avatar").textContent = $("#hello-avatar").textContent = name.charAt(0);
+    $("#user-email").textContent = me.email;
+    $("#hello-name").textContent = name;
+  }
+  const SYNC_LABELS = { off: "Sur cet appareil", idle: "Synchronisé", syncing: "Synchronisation…", ok: "Synchronisé", error: "Hors ligne, en attente", expired: "Session expirée" };
+  function renderSync() {
+    const st = ATS.store.syncState(), el = $("#sync-state");
+    el.dataset.state = st; el.textContent = SYNC_LABELS[st] || "";
+  }
+  ATS.store.onChange((e) => {
+    if (e.type === "state") {
+      renderSync();
+      if (e.state === "expired") location.replace("connexion.html?next=analyser.html");
+    } else if (!$("#view-history").hidden) renderHistory();
+    else updateCount();
+  });
+  $("#btn-logout").addEventListener("click", async () => {
+    ATS.store.forget();
+    await ATS.auth.signOut();
+    location.replace("index.html");
+  });
+
+  // Candidatures enregistrées avant les espaces personnels, sur cet appareil
+  function renderClaim() {
+    const n = ATS.store.legacyCount();
+    $("#legacy-claim").hidden = !n;
+    if (n) $("#legacy-text").textContent = n + (n > 1 ? " candidatures retrouvées sur cet appareil." : " candidature retrouvée sur cet appareil.");
+  }
+  $("#btn-claim").addEventListener("click", () => {
+    const n = ATS.store.claimLegacy();
+    renderClaim();
+    showView("history");
+    toast("✓ " + n + (n > 1 ? " candidatures ajoutées" : " candidature ajoutée") + " à ton espace.");
+  });
+  $("#btn-claim-no").addEventListener("click", () => { ATS.store.dismissLegacy(); renderClaim(); });
+
   /* ---------- Historique ---------- */
   function updateCount() { $("#history-count").textContent = ATS.store.list().length; }
   $("#search").addEventListener("input", renderHistory);
@@ -498,7 +579,13 @@
   resetForm(false);
   window.addEventListener("pageshow", (e) => { if (e.persisted) resetForm(false); });
   if (!ATS.store.isAvailable()) $("#storage-warning").hidden = false;
+  $("#history-hint").textContent = ATS.store.cloud
+    ? "Tes candidatures sont synchronisées dans ton espace : tu les retrouves sur tous tes appareils. Tu peux aussi les exporter pour en garder une copie."
+    : "Tes candidatures sont gardées dans ton espace, sur cet appareil. Exporte-les régulièrement pour en garder une copie ou les passer sur un autre appareil.";
+  renderSync();
+  renderClaim();
   if (location.hash === "#candidatures") showView("history");
   $("#year").textContent = new Date().getFullYear();
   updateCount();
+  if (ATS.store.cloud) ATS.store.sync();
 })();

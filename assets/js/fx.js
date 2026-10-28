@@ -98,6 +98,15 @@ window.ATS = window.ATS || {};
     set("before");
   }
 
+  /* ---------- Accueil : « Se connecter » devient « Mon espace » quand une session est ouverte ---------- */
+  const login = document.getElementById("nav-login");
+  const me = login && ATS.auth ? ATS.auth.user() : null;
+  if (me) {
+    login.querySelector(".avatar").textContent = ATS.auth.displayName(me).charAt(0);
+    login.querySelector(".nav-login-text").textContent = "Mon espace";
+    login.title = me.email;
+  }
+
   const year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();
 })();

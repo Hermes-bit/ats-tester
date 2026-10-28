@@ -4,19 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ATS Tester – passe le filtre des recruteurs avant d'envoyer</title>
-  <meta name="description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS). Gratuit, sans inscription, et tout reste dans ton navigateur.">
+  <meta name="description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS). Gratuit, avec ton espace perso, et tes fichiers restent dans ton navigateur.">
   <meta name="theme-color" content="#07060F">
   <meta property="og:type" content="website">
   <meta property="og:title" content="ATS Tester – passe le filtre des recruteurs avant d'envoyer">
-  <meta property="og:description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS). Gratuit, et tout reste dans ton navigateur.">
+  <meta property="og:description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS). Gratuit, et tes fichiers restent dans ton navigateur.">
   <meta property="og:image" content="https://hermes-bit.github.io/ats-tester/assets/img/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="assets/img/favicon.svg?v=8" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=8">
+  <link rel="icon" href="assets/img/favicon.svg?v=9" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=9">
   <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/vendor/fonts/cormorant-garamond-latin-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/img/hermes-barry.webp" as="image" type="image/webp">
-  <link rel="stylesheet" href="assets/css/style.css?v=8">
+  <link rel="stylesheet" href="assets/css/style.css?v=9">
 </head>
 <body class="page-home">
   <div class="bg-fx" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
@@ -24,7 +24,7 @@
   <header class="topbar">
     <div class="wrap topbar-inner">
       <a class="brand" href="#top" aria-label="ATS Tester, retour en haut">
-        <img class="brand-mark" src="assets/img/logo.svg?v=8" width="42" height="42" alt="">
+        <img class="brand-mark" src="assets/img/logo.svg?v=9" width="42" height="42" alt="">
         <div>
           <div class="brand-name">ATS Tester</div>
           <div class="brand-tag">Le messager de ta candidature</div>
@@ -34,8 +34,8 @@
         <a class="nav-link nav-anchor" href="#fonctionnalites">Fonctionnalités</a>
         <a class="nav-link nav-anchor" href="#demo">Démo</a>
         <a class="nav-link nav-anchor" href="#methode">Méthode</a>
-        <a class="nav-link nav-anchor" href="analyser.html#candidatures">Mes candidatures</a>
-        <a class="btn btn-neon btn-small" href="analyser.html">Tester mon CV <span class="arrow" aria-hidden="true">↗</span></a>
+        <a class="nav-link nav-login" id="nav-login" href="connexion.html"><span class="avatar avatar-sm" aria-hidden="true">👤</span><span class="nav-login-text">Se connecter</span></a>
+        <a class="btn btn-neon btn-small" href="connexion.html">Tester mon CV <span class="arrow" aria-hidden="true">↗</span></a>
       </nav>
     </div>
   </header>
@@ -48,12 +48,12 @@
         <h1>Passe le filtre<br>des recruteurs<br><span class="grad-text shimmer">avant d'envoyer</span></h1>
         <p class="lead">ATS Tester lit ton CV et ta lettre comme un logiciel de recrutement : mots-clés de l'offre, lisibilité, structure. Puis il te prépare un prompt pour les perfectionner avec ton IA, sans toucher à ta mise en page.</p>
         <div class="hero-cta">
-          <a class="btn btn-neon btn-large" href="analyser.html">Tester mon CV gratuitement <span class="arrow" aria-hidden="true">↗</span></a>
+          <a class="btn btn-neon btn-large" href="connexion.html">Tester mon CV gratuitement <span class="arrow" aria-hidden="true">↗</span></a>
           <a class="btn btn-ghost btn-large" href="#demo">Voir la démo ✨</a>
         </div>
         <ul class="trust">
           <li>Gratuit</li>
-          <li>Sans inscription</li>
+          <li>Ton espace perso</li>
           <li>Aucun fichier envoyé</li>
         </ul>
       </div>
@@ -64,7 +64,7 @@
         <svg class="sticker" viewBox="0 0 120 120" aria-hidden="true">
           <defs><path id="sticker-circle" d="M60 60 m-46 0 a46 46 0 1 1 92 0 a46 46 0 1 1 -92 0"/></defs>
           <circle cx="60" cy="60" r="58"/>
-          <text><textPath href="#sticker-circle">GRATUIT ✦ SANS INSCRIPTION ✦ 100 % LOCAL ✦ </textPath></text>
+          <text><textPath href="#sticker-circle" textLength="286" lengthAdjust="spacing">GRATUIT ✦ ESPACE PERSO ✦ FICHIERS PRIVÉS ✦ </textPath></text>
           <text class="sticker-center" x="60" y="70" text-anchor="middle">🚀</text>
         </svg>
         <span class="sparkle s1" aria-hidden="true">✦</span>
@@ -75,7 +75,7 @@
           <div><b>Indice ATS 🎯</b><small>Exemple d'analyse</small></div>
         </div>
         <div class="float-chip chip-ai" aria-hidden="true"><span class="chip-ico">✨</span><div><b>Prompt IA prêt</b><small>ChatGPT, Claude, Gemini…</small></div></div>
-        <div class="float-chip chip-lock" aria-hidden="true"><span class="chip-ico">🔒</span><div><b>100 % local</b><small>Rien ne quitte ton navigateur</small></div></div>
+        <div class="float-chip chip-lock" aria-hidden="true"><span class="chip-ico">🔒</span><div><b>Fichiers privés</b><small>Lus dans ton navigateur</small></div></div>
         <div class="signature"><b>Hermès BARRY</b><span>Créateur d'ATS Tester</span></div>
       </div>
     </section>
@@ -209,7 +209,7 @@
         <li class="reveal"><span class="wf-num">02</span><span class="wf-emoji" aria-hidden="true">📎</span><b>Importe ton CV</b><p>Et ta lettre de motivation si tu en as une.</p></li>
         <li class="reveal"><span class="wf-num">03</span><span class="wf-emoji" aria-hidden="true">⚡</span><b>Analyse</b><p>Scores, mots-clés manquants et recommandations.</p></li>
         <li class="reveal"><span class="wf-num">04</span><span class="wf-emoji" aria-hidden="true">🤖</span><b>Perfectionne</b><p>Copie le prompt dans ton IA et applique ses retouches.</p></li>
-        <li class="reveal"><span class="wf-num">05</span><span class="wf-emoji" aria-hidden="true">📈</span><b>Suis tes envois</b><p>Enregistre chaque candidature et son statut.</p></li>
+        <li class="reveal"><span class="wf-num">05</span><span class="wf-emoji" aria-hidden="true">📈</span><b>Suis tes envois</b><p>Chaque candidature et son statut, dans ton espace perso.</p></li>
       </ol>
     </section>
 
@@ -219,7 +219,7 @@
       <div class="creator-text">
         <div class="kicker">Le créateur</div>
         <h2 class="block-title">Hermès BARRY</h2>
-        <p>Géomaticien, j'ai conçu ATS Tester pour aider chaque candidat à passer le premier filtre des recrutements. L'outil est gratuit, open source, et tout se passe dans ton navigateur.</p>
+        <p>Géomaticien, j'ai conçu ATS Tester pour aider chaque candidat à passer le premier filtre des recrutements. L'outil est gratuit, open source, et tes fichiers sont analysés directement dans ton navigateur.</p>
         <div class="creator-links">
           <a class="btn btn-ghost btn-small" href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn ↗</a>
           <a class="btn btn-ghost btn-small" href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">Code source ↗</a>
@@ -232,31 +232,33 @@
       <span class="sparkle s4" aria-hidden="true">✦</span><span class="sparkle s5" aria-hidden="true">✧</span>
       <div class="kicker">C'est parti</div>
       <h2 class="block-title">Prêt à passer<br><span class="grad-text shimmer">le filtre ?</span></h2>
-      <p class="muted">Dix minutes, aucune inscription, et ta candidature arrive enfin jusqu'au recruteur.</p>
-      <a class="btn btn-neon btn-large" href="analyser.html">Tester mon CV maintenant <span class="arrow" aria-hidden="true">↗</span></a>
+      <p class="muted">Dix minutes, un espace gratuit, et ta candidature arrive enfin jusqu'au recruteur.</p>
+      <a class="btn btn-neon btn-large" href="connexion.html">Tester mon CV maintenant <span class="arrow" aria-hidden="true">↗</span></a>
     </section>
   </main>
 
   <footer class="footer">
     <div class="wrap footer-inner">
       <div class="footer-brand">
-        <img src="assets/img/logo.svg?v=8" width="36" height="36" alt="">
+        <img src="assets/img/logo.svg?v=9" width="36" height="36" alt="">
         <div>
           <div class="footer-name">ATS Tester</div>
           <div class="footer-tag">Le messager de ta candidature</div>
         </div>
       </div>
       <ul class="footer-notes">
-        <li>Tout reste dans ton navigateur : aucun fichier n'est envoyé sur un serveur.</li>
+        <li>L'analyse se fait dans ton navigateur : tes fichiers ne sont jamais envoyés.</li>
         <li>Simulation indicative : chaque ATS a ses propres règles.</li>
       </ul>
       <div class="footer-links">
         <span>© <span id="year">2026</span> ATS Tester · Hermès BARRY</span>
-        <span><a href="analyser.html">Analyser</a> · <a href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">GitHub</a></span>
+        <span><a href="connexion.html">Mon espace</a> · <a href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">GitHub</a></span>
       </div>
     </div>
   </footer>
 
-  <script src="assets/js/fx.js?v=8"></script>
+  <script src="assets/js/config.js?v=9"></script>
+  <script src="assets/js/auth.js?v=9"></script>
+  <script src="assets/js/fx.js?v=9"></script>
 </body>
 </html>

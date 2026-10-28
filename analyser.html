@@ -6,10 +6,13 @@
   <title>Analyser ma candidature – ATS Tester</title>
   <meta name="description" content="Compare ton CV et ta lettre de motivation à une fiche de poste, comme un logiciel de recrutement (ATS). Tout reste dans ton navigateur.">
   <meta name="theme-color" content="#07060F">
-  <link rel="icon" href="assets/img/favicon.svg?v=8" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=8">
+  <link rel="icon" href="assets/img/favicon.svg?v=9" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=9">
   <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/style.css?v=8">
+  <link rel="stylesheet" href="assets/css/style.css?v=9">
+  <script src="assets/js/config.js?v=9"></script>
+  <script src="assets/js/auth.js?v=9"></script>
+  <script>ATS.auth.guard(location.hash === "#candidatures" ? "analyser.html#candidatures" : "analyser.html");</script>
 </head>
 <body class="page-app">
   <div class="bg-fx" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
@@ -17,7 +20,7 @@
   <header class="topbar">
     <div class="wrap topbar-inner">
       <a class="brand" href="index.html" aria-label="ATS Tester, accueil">
-        <img class="brand-mark" src="assets/img/logo.svg?v=8" width="42" height="42" alt="">
+        <img class="brand-mark" src="assets/img/logo.svg?v=9" width="42" height="42" alt="">
         <div>
           <div class="brand-name">ATS Tester</div>
           <div class="brand-tag">Le messager de ta candidature</div>
@@ -26,7 +29,12 @@
       <nav class="nav" aria-label="Navigation de l'analyseur">
         <a class="nav-link nav-anchor" href="index.html">← Accueil</a>
         <button class="nav-link tab is-active" data-view="analyze" aria-selected="true">Analyser</button>
-        <button class="nav-link tab" data-view="history" aria-selected="false">Mes candidatures <span class="badge" id="history-count">0</span></button>
+        <button class="nav-link tab" data-view="history" aria-selected="false"><span><span class="tab-long">Mes </span>candidatures</span> <span class="badge" id="history-count">0</span></button>
+        <div class="user-chip">
+          <span class="avatar" id="user-avatar" aria-hidden="true"></span>
+          <span class="user-meta"><b id="user-email"></b><small id="sync-state"></small></span>
+          <button class="logout" id="btn-logout" type="button" title="Se déconnecter" aria-label="Se déconnecter">⏻</button>
+        </div>
       </nav>
     </div>
   </header>
@@ -35,9 +43,9 @@
     <!-- ================= ANALYSER ================= -->
     <section id="view-analyze" class="view">
       <div class="app-hero" id="form-top">
-        <div class="kicker">L'analyseur</div>
+        <div class="hello-pill"><span class="avatar avatar-sm" id="hello-avatar" aria-hidden="true"></span><span>Salut <b id="hello-name"></b> 👋 prêt pour une nouvelle candidature ?</span></div>
         <h1>Teste ta <span class="grad-text shimmer">candidature</span> <span class="wave" aria-hidden="true">🚀</span></h1>
-        <p class="lead">Colle l'offre, ajoute ton CV, et regarde ta candidature passer (ou pas) le filtre. Rien n'est envoyé sur un serveur.</p>
+        <p class="lead">Colle l'offre, ajoute ton CV, et regarde ta candidature passer (ou pas) le filtre. Tes fichiers sont lus dans ton navigateur, jamais envoyés.</p>
         <ol class="steps-pills" aria-label="Étapes">
           <li><span>1</span>L'offre</li>
           <li><span>2</span>Tes documents</li>
@@ -48,6 +56,14 @@
 
       <div id="storage-warning" class="notice warn" hidden>
         Ton navigateur bloque la sauvegarde locale (navigation privée ?). Les candidatures enregistrées seront perdues à la fermeture de l'onglet : pense à les exporter.
+      </div>
+
+      <div class="notice claim" id="legacy-claim" hidden>
+        <span>📦 <b id="legacy-text"></b> Elles ont été enregistrées sur cet appareil avant la création des espaces personnels.</span>
+        <span class="claim-actions">
+          <button class="btn btn-primary btn-small" id="btn-claim" type="button">Les ajouter à mon espace</button>
+          <button class="link" id="btn-claim-no" type="button">Non, ce ne sont pas les miennes</button>
+        </span>
       </div>
 
       <div class="grid-2">
@@ -294,7 +310,7 @@
           <p><b>Aucune candidature enregistrée pour l'instant.</b></p>
           <p class="muted">Analyse une offre, puis clique sur « Enregistrer dans Mes candidatures ».</p>
         </div>
-        <p class="hint">Tes candidatures sont gardées dans ce navigateur, sur cet appareil. Exporte-les régulièrement pour en garder une copie.</p>
+        <p class="hint" id="history-hint">Tes candidatures sont gardées dans ton espace, sur cet appareil. Exporte-les régulièrement pour en garder une copie.</p>
       </article>
     </section>
   </main>
@@ -319,17 +335,31 @@
     </form>
   </dialog>
 
+  <!-- Temps de réflexion pendant l'analyse -->
+  <div class="think" id="think" hidden role="dialog" aria-modal="true" aria-labelledby="think-title">
+    <div class="think-card">
+      <div class="think-visual" aria-hidden="true">
+        <div class="think-doc"><i></i><i></i><i></i><i></i><i></i><i></i><span class="think-scan"></span></div>
+        <img class="think-logo" src="assets/img/logo.svg?v=9" alt="">
+      </div>
+      <h2 id="think-title"><span id="think-label">Analyse en cours</span><span class="dots" aria-hidden="true"></span></h2>
+      <p class="muted" id="think-sub">Le messager lit ta candidature comme un recruteur pressé.</p>
+      <div class="think-bar" aria-hidden="true"><i id="think-bar"></i></div>
+      <ol class="think-steps" id="think-steps" aria-live="polite"></ol>
+    </div>
+  </div>
+
   <footer class="footer">
     <div class="wrap footer-inner">
       <div class="footer-brand">
-        <img src="assets/img/logo.svg?v=8" width="36" height="36" alt="">
+        <img src="assets/img/logo.svg?v=9" width="36" height="36" alt="">
         <div>
           <div class="footer-name">ATS Tester</div>
           <div class="footer-tag">Le messager de ta candidature</div>
         </div>
       </div>
       <ul class="footer-notes">
-        <li>Tout reste dans ton navigateur : aucun fichier n'est envoyé sur un serveur.</li>
+        <li>L'analyse se fait dans ton navigateur : tes fichiers ne sont jamais envoyés.</li>
         <li>Simulation indicative : chaque ATS a ses propres règles.</li>
       </ul>
       <div class="footer-links">
@@ -343,12 +373,12 @@
 
   <script src="assets/vendor/pdf.min.js"></script>
   <script src="assets/vendor/mammoth.browser.min.js"></script>
-  <script src="assets/js/keywords.js?v=8"></script>
-  <script src="assets/js/extract.js?v=8"></script>
-  <script src="assets/js/analyzer.js?v=8"></script>
-  <script src="assets/js/prompt.js?v=8"></script>
-  <script src="assets/js/storage.js?v=8"></script>
-  <script src="assets/js/fx.js?v=8"></script>
-  <script src="assets/js/app.js?v=8"></script>
+  <script src="assets/js/keywords.js?v=9"></script>
+  <script src="assets/js/extract.js?v=9"></script>
+  <script src="assets/js/analyzer.js?v=9"></script>
+  <script src="assets/js/prompt.js?v=9"></script>
+  <script src="assets/js/storage.js?v=9"></script>
+  <script src="assets/js/fx.js?v=9"></script>
+  <script src="assets/js/app.js?v=9"></script>
 </body>
 </html>

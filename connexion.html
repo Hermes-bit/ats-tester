@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mon espace – ATS Tester</title>
+  <meta name="description" content="Connecte-toi à ton espace ATS Tester pour retrouver tes candidatures et tester ton CV face à une offre d'emploi.">
+  <meta name="theme-color" content="#07060F">
+  <link rel="icon" href="assets/img/favicon.svg?v=9" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=9">
+  <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/vendor/fonts/cormorant-garamond-latin-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/style.css?v=9">
+</head>
+<body class="page-login is-splashing">
+  <div class="bg-fx" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+  <!-- ================= ÉCRAN DE LANCEMENT ================= -->
+  <div class="splash" id="splash">
+    <div class="splash-flash" aria-hidden="true"></div>
+    <div class="splash-stage" aria-hidden="true">
+      <div class="splash-waves"><i></i><i></i><i></i></div>
+      <div class="splash-orbit"><span>📄</span><span>🎯</span><span>✨</span><span>🚀</span></div>
+      <div class="splash-coin">
+        <svg class="splash-logo" viewBox="0 0 64 64">
+          <defs>
+            <linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#67E8F9"/><stop offset=".5" stop-color="#A78BFA"/><stop offset="1" stop-color="#F472B6"/></linearGradient>
+            <linearGradient id="sr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22D3EE"/><stop offset=".55" stop-color="#A78BFA"/><stop offset="1" stop-color="#F472B6"/></linearGradient>
+            <radialGradient id="sb" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#2A1F5C"/><stop offset="1" stop-color="#0A0818"/></radialGradient>
+          </defs>
+          <circle cx="32" cy="32" r="31" fill="url(#sb)"/>
+          <circle cx="32" cy="32" r="30.2" fill="none" stroke="url(#sr)" stroke-width="1.6"/>
+          <circle class="splash-dots" cx="32" cy="32" r="27" fill="none" stroke="url(#sr)" stroke-width="1.5" stroke-dasharray="0 3.393" stroke-linecap="round"/>
+          <g transform="translate(32 32) scale(.84) translate(-29.6 -29.8)">
+            <path class="splash-wing" fill="url(#sg)" d="M30 40 C 27 30, 20 19, 10.5 15 Q 11.5 21.5, 18 24.5 Q 11.5 24.5, 8.5 27.5 Q 12.5 31.5, 19.5 31 Q 13.5 32.5, 11 36 Q 15 38.5, 21.5 36.5 Q 17.5 39, 16 42 Q 21.5 44, 27.5 42.5 Z"/>
+            <path class="splash-check splash-check-shadow" d="M27.5 37 L34 43.5 L48 25" fill="none" stroke="#120D2A" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+            <path class="splash-check" d="M27.5 37 L34 43.5 L48 25" fill="none" stroke="url(#sg)" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="splash-word" aria-hidden="true"><span>A</span><span>T</span><span>S</span><span class="gap"></span><span>T</span><span>E</span><span>S</span><span>T</span><span>E</span><span>R</span></div>
+    <div class="splash-tag">Le messager de ta candidature</div>
+    <div class="splash-progress">
+      <div class="splash-bar"><i id="splash-bar"></i></div>
+      <div class="splash-pct"><b id="splash-pct">0</b><span>%</span></div>
+    </div>
+    <div class="splash-msg" id="splash-msg" role="status">Hermès lace ses sandales ailées 👟</div>
+    <button type="button" class="splash-skip" id="splash-skip">Passer ⏭</button>
+  </div>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="index.html" aria-label="ATS Tester, accueil">
+        <img class="brand-mark" src="assets/img/logo.svg?v=9" width="42" height="42" alt="">
+        <div>
+          <div class="brand-name">ATS Tester</div>
+          <div class="brand-tag">Le messager de ta candidature</div>
+        </div>
+      </a>
+      <nav class="nav" aria-label="Navigation">
+        <a class="nav-link" href="index.html">← Accueil</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap login">
+    <!-- Présentation de l'espace -->
+    <section class="login-visual">
+      <div class="kicker">Ton espace personnel</div>
+      <h1>Toutes tes<br><span class="grad-text shimmer">candidatures</span><br>au même <span class="nowrap">endroit <span class="wave" aria-hidden="true">🔐</span></span></h1>
+      <ul class="login-perks">
+        <li><span>📦</span><div><b>Ton historique</b>Chaque offre testée, avec ses scores et tes notes.</div></li>
+        <li><span>📈</span><div><b>Ton suivi</b>Envoyée, relancée, entretien : tu sais où tu en es.</div></li>
+        <li><span>🔒</span><div><b>Tes fichiers restent chez toi</b>Ton CV est analysé dans ton navigateur, jamais envoyé.</div></li>
+      </ul>
+      <div class="login-mock" aria-hidden="true">
+        <div class="lm-row"><b>Alpha Géo</b><span class="pill good">86</span><i class="lm-status s-itw">Entretien 🎉</i></div>
+        <div class="lm-row"><b>Carto&amp;Co</b><span class="pill mid">71</span><i class="lm-status s-sent">Envoyée</i></div>
+        <div class="lm-row"><b>Terra SIG</b><span class="pill good">78</span><i class="lm-status s-rel">Relancée</i></div>
+        <div class="lm-cap">Exemple fictif</div>
+      </div>
+    </section>
+
+    <!-- Carte de connexion -->
+    <section class="card login-card" aria-labelledby="auth-title">
+      <div class="login-tabs" role="tablist" aria-label="Connexion ou création d'espace">
+        <button type="button" role="tab" id="tab-signin" data-tab="signin" aria-selected="true">Connexion</button>
+        <button type="button" role="tab" id="tab-signup" data-tab="signup" aria-selected="false">Créer mon espace</button>
+        <span class="tab-ink" aria-hidden="true"></span>
+      </div>
+
+      <!-- Connexion / inscription -->
+      <form id="form-auth" class="login-form" novalidate>
+        <h2 id="auth-title" class="login-title">Bon retour 👋</h2>
+        <p class="muted login-sub" id="auth-sub">Connecte-toi pour retrouver tes candidatures.</p>
+
+        <label class="field" data-only="signup" hidden>
+          <span>Prénom <em>(facultatif)</em></span>
+          <input id="first-name" type="text" autocomplete="given-name" maxlength="40" placeholder="Comment on t'appelle ?">
+        </label>
+        <label class="field">
+          <span>E-mail</span>
+          <input id="email" type="email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="prenom.nom@mail.com" required>
+        </label>
+        <label class="field">
+          <span>Mot de passe</span>
+          <span class="pw">
+            <input id="password" type="password" autocomplete="current-password" minlength="8" required>
+            <button type="button" class="pw-toggle" data-pw="password" aria-label="Afficher le mot de passe" aria-pressed="false">👁️</button>
+          </span>
+        </label>
+        <div class="pw-meter" data-only="signup" hidden aria-live="polite"><span class="pw-track"><i id="pw-fill"></i></span><span id="pw-label">8 caractères minimum</span></div>
+        <label class="field" data-only="signup" hidden>
+          <span>Confirme le mot de passe</span>
+          <span class="pw">
+            <input id="password2" type="password" autocomplete="new-password" minlength="8">
+            <button type="button" class="pw-toggle" data-pw="password2" aria-label="Afficher la confirmation" aria-pressed="false">👁️</button>
+          </span>
+        </label>
+
+        <div class="login-row">
+          <label class="check"><input type="checkbox" id="remember" checked> Rester connecté</label>
+          <button type="button" class="link" id="btn-forgot" data-only="signin">Mot de passe oublié ?</button>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-large btn-block" id="btn-submit"><span class="btn-label">Se connecter</span><span class="spinner" aria-hidden="true"></span></button>
+        <p class="error login-msg" id="auth-error" role="alert"></p>
+        <p class="ok-msg login-msg" id="auth-ok" role="status"></p>
+      </form>
+
+      <!-- Mot de passe oublié / nouveau mot de passe -->
+      <form id="form-reset" class="login-form" novalidate hidden>
+        <h2 class="login-title" id="reset-title">Mot de passe oublié 🔑</h2>
+        <p class="muted login-sub" id="reset-sub"></p>
+        <label class="field" id="reset-email-field">
+          <span>E-mail</span>
+          <input id="reset-email" type="email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false">
+        </label>
+        <label class="field" id="reset-pw-field" hidden>
+          <span>Nouveau mot de passe</span>
+          <span class="pw">
+            <input id="reset-pw" type="password" autocomplete="new-password" minlength="8">
+            <button type="button" class="pw-toggle" data-pw="reset-pw" aria-label="Afficher le mot de passe" aria-pressed="false">👁️</button>
+          </span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-large btn-block" id="btn-reset-submit"><span class="btn-label">Recevoir un lien</span><span class="spinner" aria-hidden="true"></span></button>
+        <p class="error login-msg" id="reset-error" role="alert"></p>
+        <p class="ok-msg login-msg" id="reset-ok" role="status"></p>
+        <button type="button" class="link" id="btn-back">← Retour à la connexion</button>
+      </form>
+
+      <!-- Connexion réussie -->
+      <div class="login-success" id="login-success" hidden>
+        <div class="success-badge" aria-hidden="true">✓</div>
+        <h2 class="login-title" id="success-title">Bienvenue !</h2>
+        <p class="muted">Ouverture de ton espace…</p>
+        <button type="button" class="link" id="btn-switch">Ce n'est pas toi ? Changer de compte</button>
+      </div>
+
+      <p class="login-mode" id="login-mode"></p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <div class="footer-brand">
+        <img src="assets/img/logo.svg?v=9" width="36" height="36" alt="">
+        <div>
+          <div class="footer-name">ATS Tester</div>
+          <div class="footer-tag">Le messager de ta candidature</div>
+        </div>
+      </div>
+      <ul class="footer-notes">
+        <li>L'analyse se fait dans ton navigateur : tes fichiers ne sont jamais envoyés.</li>
+        <li>Simulation indicative : chaque ATS a ses propres règles.</li>
+      </ul>
+      <div class="footer-links">
+        <span>© <span id="year">2026</span> ATS Tester · Hermès BARRY</span>
+        <span><a href="index.html">Accueil</a> · <a href="https://www.linkedin.com/in/hermes-barry-8727581bb" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/Hermes-bit/ats-tester" target="_blank" rel="noopener">GitHub</a></span>
+      </div>
+    </div>
+  </footer>
+
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <script src="assets/js/config.js?v=9"></script>
+  <script src="assets/js/auth.js?v=9"></script>
+  <script src="assets/js/fx.js?v=9"></script>
+  <script src="assets/js/login.js?v=9"></script>
+</body>
+</html>
