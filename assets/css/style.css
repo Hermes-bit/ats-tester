@@ -529,6 +529,9 @@ html.page-hidden *, html.page-hidden *::before, html.page-hidden *::after { anim
 .dl-ic svg { width: 12px; height: 12px; fill: none; stroke: #160B2E; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .btn-primary .dl-ic { background: rgba(22, 11, 46, .16); }
 .dl-btn small { font-size: 10.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; }
+.dl-btn.is-rebuilt { border-style: dashed; background: rgba(255, 255, 255, .04); }
+.dlg-doc.is-rebuilt { border-style: dashed; }
+.dlg-doc.is-rebuilt small { color: #FCD34D; }
 .dl-btn:hover { background: rgba(167, 139, 250, .24); transform: translateY(-1px); }
 .dl-btn:active { transform: scale(.96); }
 .dlg-docs { display: grid; gap: 8px; }
