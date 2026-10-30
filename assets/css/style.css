@@ -529,9 +529,14 @@ html.page-hidden *, html.page-hidden *::before, html.page-hidden *::after { anim
 .dl-ic svg { width: 12px; height: 12px; fill: none; stroke: #160B2E; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .btn-primary .dl-ic { background: rgba(22, 11, 46, .16); }
 .dl-btn small { font-size: 10.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; }
-.dl-btn.is-rebuilt { border-style: dashed; background: rgba(255, 255, 255, .04); }
-.dlg-doc.is-rebuilt { border-style: dashed; }
-.dlg-doc.is-rebuilt small { color: #FCD34D; }
+.dl-btn.is-missing { border-style: dashed; border-color: rgba(251, 191, 36, .55); background: var(--mid-bg); }
+.dl-btn.is-missing .dl-ic { background: var(--mid); }
+.dl-btn.is-missing small { color: #FCD34D; }
+.dlg-doc.is-missing { border-style: dashed; border-color: rgba(251, 191, 36, .5); }
+.dlg-doc.is-missing small { color: #FCD34D; }
+.orig-missing { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin: 0 0 14px; background: var(--mid-bg); border: 1px solid rgba(251, 191, 36, .45); }
+.orig-missing[hidden] { display: none; }
+.orig-missing > span { flex: 1 1 320px; }
 .dl-btn:hover { background: rgba(167, 139, 250, .24); transform: translateY(-1px); }
 .dl-btn:active { transform: scale(.96); }
 .dlg-docs { display: grid; gap: 8px; }

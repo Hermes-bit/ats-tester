@@ -6,12 +6,12 @@
   <title>Analyser ma candidature – ATS Tester</title>
   <meta name="description" content="Compare ton CV et ta lettre de motivation à une fiche de poste, comme un logiciel de recrutement (ATS). Tout reste dans ton navigateur.">
   <meta name="theme-color" content="#07060F">
-  <link rel="icon" href="assets/img/favicon.svg?v=15" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=15">
+  <link rel="icon" href="assets/img/favicon.svg?v=16" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=16">
   <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/style.css?v=15">
-  <script src="assets/js/config.js?v=15"></script>
-  <script src="assets/js/auth.js?v=15"></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=16">
+  <script src="assets/js/config.js?v=16"></script>
+  <script src="assets/js/auth.js?v=16"></script>
   <script>ATS.auth.guard(location.hash === "#candidatures" ? "analyser.html#candidatures" : "analyser.html");</script>
 </head>
 <body class="page-app">
@@ -22,7 +22,7 @@
       <div class="topbar-left">
       <button class="back-btn" type="button" data-back="index.html" aria-label="Revenir à la page précédente" title="Revenir à la page précédente"><span class="back-ico" aria-hidden="true">←</span><span class="back-txt">Retour</span></button>
       <a class="brand" href="index.html" aria-label="ATS Tester, accueil">
-        <img class="brand-mark" src="assets/img/logo.svg?v=15" width="42" height="42" alt="">
+        <img class="brand-mark" src="assets/img/logo.svg?v=16" width="42" height="42" alt="">
         <div>
           <div class="brand-name">ATS Tester</div>
           <div class="brand-tag">Le messager de ta candidature</div>
@@ -341,6 +341,10 @@
             <label class="btn btn-ghost btn-small file-btn">Importer<input id="import-file" type="file" accept=".json,application/json" hidden></label>
           </div>
         </div>
+        <div class="notice orig-missing" id="orig-missing" hidden>
+          <span>📎 <b id="orig-missing-text"></b> Importe ton CV ou ta lettre d'origine (PDF, Word) : chaque fichier est rattaché automatiquement aux candidatures enregistrées avec ce document.</span>
+          <label class="btn btn-primary btn-small file-btn">Retrouver mes fichiers<input type="file" id="orig-files" accept=".pdf,.docx,application/pdf" multiple hidden></label>
+        </div>
         <div class="search-meta">
           <label class="check"><input type="checkbox" id="show-archived"> Afficher les archivées</label>
           <span class="muted small" id="search-info"></span>
@@ -395,7 +399,7 @@
     <div class="think-card">
       <div class="think-visual" aria-hidden="true">
         <div class="think-doc"><i></i><i></i><i></i><i></i><i></i><i></i><span class="think-scan"></span></div>
-        <img class="think-logo" src="assets/img/logo.svg?v=15" alt="">
+        <img class="think-logo" src="assets/img/logo.svg?v=16" alt="">
       </div>
       <h2 id="think-title"><span id="think-label">Analyse en cours</span><span class="dots" aria-hidden="true"></span></h2>
       <p class="muted" id="think-sub">Le messager lit ta candidature comme un recruteur pressé.</p>
@@ -407,7 +411,7 @@
   <footer class="footer">
     <div class="wrap footer-inner">
       <div class="footer-brand">
-        <img src="assets/img/logo.svg?v=15" width="36" height="36" alt="">
+        <img src="assets/img/logo.svg?v=16" width="36" height="36" alt="">
         <div>
           <div class="footer-name">ATS Tester</div>
           <div class="footer-tag">Le messager de ta candidature</div>
@@ -428,17 +432,16 @@
 
   <script src="assets/vendor/pdf.min.js"></script>
   <script src="assets/vendor/mammoth.browser.min.js"></script>
-  <script src="assets/js/keywords.js?v=15"></script>
-  <script src="assets/js/extract.js?v=15"></script>
-  <script src="assets/js/analyzer.js?v=15"></script>
-  <script src="assets/js/profile.js?v=15"></script>
-  <script src="assets/js/offer.js?v=15"></script>
-  <script src="assets/js/search.js?v=15"></script>
-  <script src="assets/js/prompt.js?v=15"></script>
-  <script src="assets/js/storage.js?v=15"></script>
-  <script src="assets/js/files.js?v=15"></script>
-  <script src="assets/js/pdf-writer.js?v=15"></script>
-  <script src="assets/js/fx.js?v=15"></script>
-  <script src="assets/js/app.js?v=15"></script>
+  <script src="assets/js/keywords.js?v=16"></script>
+  <script src="assets/js/extract.js?v=16"></script>
+  <script src="assets/js/analyzer.js?v=16"></script>
+  <script src="assets/js/profile.js?v=16"></script>
+  <script src="assets/js/offer.js?v=16"></script>
+  <script src="assets/js/search.js?v=16"></script>
+  <script src="assets/js/prompt.js?v=16"></script>
+  <script src="assets/js/storage.js?v=16"></script>
+  <script src="assets/js/files.js?v=16"></script>
+  <script src="assets/js/fx.js?v=16"></script>
+  <script src="assets/js/app.js?v=16"></script>
 </body>
 </html>

@@ -109,6 +109,7 @@
       const res = await ATS.extractFile(file);
       state.docs[kind] = { text: res.text, name: file.name, meta: res.meta, file };
       renderDocStatus(kind);
+      recoverOriginals(kind, file, res.text);
     } catch (e) {
       state.docs[kind] = null;
       $("#drop-" + kind).classList.remove("has-file");
@@ -431,6 +432,8 @@
       app[k + "File"] = ref;
     }
     $("#btn-save").disabled = false;
+    if (app.cvFile || app.letterFile) persistStorage();
+    const pasted = [["cv", cv, "CV"], ["letter", letter, "lettre"]].filter(([k, d]) => d && !app[k + "File"]).map(([, , l]) => l);
     const saved = ATS.store.upsert(app);
     state.editingId = saved.id;
     pruneFiles();
@@ -438,7 +441,8 @@
     const kept = [saved.cvFile && "CV", saved.letterFile && "lettre"].filter(Boolean);
     $("#save-msg").textContent = "✓ Enregistrée dans Mes candidatures" + (disq ? " avec l'étiquette « ⛔ Pré-requis bloquant »" + (ATS.store.getWebhook() ? ", webhook prévenu" : "") : "") +
       (kept.length ? " · " + kept.join(" et ") + " d'origine " + (kept.length > 1 ? "gardés" : "gardé") + ", téléchargeable" + (kept.length > 1 ? "s" : "") + " depuis l'historique" : "") +
-      (fileErrors.length ? " · " + fileErrors[0] : "");
+      (fileErrors.length ? " · " + fileErrors[0] : "") +
+      (pasted.length ? " · " + pasted.join(" et ") + " collé" + (pasted.length > 1 ? "s" : "") + " en texte : pas de fichier d'origine à garder (importe ton PDF pour pouvoir le retélécharger)" : "");
     if (disq) fireWebhook(saved, r);
     updateCount();
   });
@@ -452,46 +456,92 @@
     const used = ATS.store.list().flatMap((a) => [a.cvFile, a.letterFile]).filter(Boolean).map((f) => f.hash);
     ATS.files.prune(used).catch(() => {});
   }
-  // Le document téléchargé est celui de la dernière analyse enregistrée pour l'offre : le fichier d'origine
-  // (PDF, DOCX…). S'il n'a pas été gardé (texte collé, ancienne candidature, autre appareil), un PDF est
-  // reconstitué à partir du texte lu, et la fenêtre de détail permet de joindre le PDF d'origine.
+  // Seul le fichier d'origine (PDF, Word…) est téléchargé, tel qu'importé lors de la dernière analyse enregistrée
+  // pour l'offre : mise en page et charte graphique intactes, rien n'est reconstruit.
+  // S'il manque (candidature plus ancienne, texte collé, autre appareil), on le joint ou on le retrouve :
+  // un même document a toujours le même texte lu, ce qui permet de le rattacher aux bonnes candidatures.
+  const CLIP_ICON = '<span class="dl-ic" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 10.5V3M4.8 6.2 8 3l3.2 3.2M3.5 13.5h9"/></svg></span>';
+  const sameText = (x, y) => !!x && !!y && x.replace(/\s+/g, " ").trim() === y.replace(/\s+/g, " ").trim();
+  let persistAsked = false;
+  // Demande au navigateur de ne pas effacer les fichiers gardés en cas de manque d'espace
+  function persistStorage() {
+    if (persistAsked || !navigator.storage || !navigator.storage.persist) return;
+    persistAsked = true;
+    navigator.storage.persisted().then((p) => p || navigator.storage.persist()).catch(() => {});
+  }
+  async function localHashes() { try { return new Set(await ATS.files.list()); } catch (e) { return new Set(); } }
+  function hasLocal(a, k, local) { const r = a[k + "File"]; return !!(r && local.has(r.hash)); }
+
   async function downloadDoc(id, kind) {
     const a = ATS.store.get(id);
     if (!a) return;
-    const ref = a[kind + "File"], text = a[kind + "Text"];
-    if (ref) {
-      let f = null;
-      try { f = await ATS.files.get(ref.hash); } catch (e) { f = null; }
-      if (f) { ATS.files.download(f.blob, a.company + " - " + f.name); return; }
-      if (text) toast("Fichier d'origine absent de cet appareil : PDF reconstitué à partir du texte. Ouvre la candidature pour joindre le PDF d'origine.");
-    }
-    if (!text) { toast("Le fichier d'origine n'est gardé que sur l'appareil où la candidature a été enregistrée."); return; }
-    ATS.files.download(ATS.pdf.textToPdf(text, {
-      title: DOC_LABEL[kind] + " - " + a.company + (a.title ? " - " + a.title : ""),
-      footer: DOC_LABEL[kind] + " envoyé à " + a.company + " · reconstitué par ATS Tester à partir du texte lu (fichier d'origine non conservé)",
-    }), a.company + " - " + DOC_LABEL[kind] + " (reconstitué).pdf");
+    const ref = a[kind + "File"];
+    let f = null;
+    if (ref) { try { f = await ATS.files.get(ref.hash); } catch (e) { f = null; } }
+    if (f) { ATS.files.download(f.blob, a.company + " - " + f.name); return; }
+    toast(ref ? "Le fichier d'origine est resté sur l'appareil où la candidature a été enregistrée : joins-le ici pour le retrouver."
+      : "Fichier d'origine non gardé pour cette candidature : joins ton PDF d'origine pour le retrouver.");
   }
-  // Joindre (ou remplacer) le fichier d'origine d'une candidature déjà enregistrée
+
+  // Rattache un fichier d'origine à toutes les candidatures enregistrées avec le même texte qui ne l'ont pas
+  async function linkByText(kind, text, ref, name) {
+    const local = await localHashes();
+    let n = 0;
+    for (const a of ATS.store.list()) {
+      if (!sameText(a[kind + "Text"], text) || hasLocal(a, kind, local)) continue;
+      ATS.store.upsert({ id: a.id, [kind + "File"]: ref, [kind + "Name"]: name });
+      n++;
+    }
+    return n;
+  }
+
+  // Joindre (ou remplacer) le fichier d'origine d'une candidature ; propagé aux candidatures qui ont le même document
   async function attachDoc(id, kind, file) {
-    if (!file) return;
+    const a = ATS.store.get(id);
+    if (!file || !a) return;
     try {
       const ref = await ATS.files.put(file);
+      let text = null;
+      try { text = (await ATS.extractFile(file)).text; } catch (e) { text = null; }
+      const matches = text !== null && sameText(text, a[kind + "Text"]);
       ATS.store.upsert({ id, [kind + "File"]: ref, [kind + "Name"]: file.name });
+      const others = matches ? await linkByText(kind, text, ref, file.name) : 0;
+      persistStorage();
       pruneFiles();
-      toast("✓ " + file.name + " joint à la candidature : c'est lui qui sera téléchargé.");
-      // Seule la rubrique Documents de la fenêtre est rafraîchie (les autres champs non enregistrés restent)
+      toast("✓ " + file.name + " joint" + (others ? " à cette candidature et à " + others + " autre" + (others > 1 ? "s" : "") + " qui utilisent le même document" : " à la candidature") +
+        (text !== null && !matches && a[kind + "Text"] ? ". Attention : ce fichier ne correspond pas exactement au texte analysé pour cette offre (document modifié depuis ?)." : " : c'est lui qui sera téléchargé."));
       const box = $("#dlg-body .dlg-docs");
       if (box && state.dialogId === id) { box.outerHTML = dialogDocs(ATS.store.get(id)); wireDialogDocs(id); }
       if (!$("#view-history").hidden) renderHistory();
     } catch (e) { toast("Impossible de joindre ce fichier : " + e.message); }
   }
+
+  // Analyseur : un CV ou une lettre importé retrouve sa place dans les candidatures enregistrées avec le même document
+  async function recoverOriginals(kind, file, text) {
+    try {
+      const local = await localHashes();
+      if (!ATS.store.list().some((a) => sameText(a[kind + "Text"], text) && !hasLocal(a, kind, local))) return;
+      const ref = await ATS.files.put(file);
+      const n = await linkByText(kind, text, ref, file.name);
+      if (!n) return;
+      persistStorage();
+      toast("📎 Fichier d'origine retrouvé : " + file.name + " est rattaché à " + n + " candidature" + (n > 1 ? "s" : "") + " enregistrée" + (n > 1 ? "s" : "") + " avec ce document.");
+      if (!$("#view-history").hidden) renderHistory();
+    } catch (e) { /* le fichier reste utilisable pour l'analyse */ }
+  }
+
+  function attachLabel(k) {
+    return '<label class="dl-btn is-missing" title="Fichier d\'origine non disponible ici : clique pour joindre ' + (k === "cv" ? "ton CV" : "ta lettre") + ' d\'origine (PDF, Word)">' +
+      CLIP_ICON + (k === "cv" ? "CV" : "Lettre") + ' <small>joindre</small><input type="file" accept=".pdf,.docx,application/pdf" data-attach="' + k + '" hidden></label>';
+  }
   function docButtons(a) {
     const btn = (k) => {
       const ref = a[k + "File"], text = a[k + "Text"];
       if (!ref && !text) return "";
-      const what = ref ? ref.name + " · " + ATS.files.formatSize(ref.size) : "PDF reconstitué à partir du texte (fichier d'origine non gardé : ouvre la candidature pour le joindre)";
-      return '<button type="button" class="dl-btn' + (ref ? "" : " is-rebuilt") + '" data-dl="' + k + '" title="Télécharger : ' + esc(what) + '" aria-label="Télécharger ' + (k === "cv" ? "le CV" : "la lettre") + " (" + esc(what) + ')">' +
-        DL_ICON + (k === "cv" ? "CV" : "Lettre") + (ref ? "" : ' <small>recréé</small>') + "</button>";
+      if (!ref) return attachLabel(k);
+      const what = ref.name + " · " + ATS.files.formatSize(ref.size);
+      return '<button type="button" class="dl-btn" data-dl="' + k + '" title="Télécharger : ' + esc(what) + '" aria-label="Télécharger ' + (k === "cv" ? "le CV" : "la lettre") + " (" + esc(what) + ')">' +
+        DL_ICON + (k === "cv" ? "CV" : "Lettre") + "</button>";
     };
     return btn("cv") + btn("letter") || '<span class="muted">—</span>';
   }
@@ -689,10 +739,52 @@
       $("[data-status]", tr).addEventListener("change", (e) => { ATS.store.upsert({ id, status: e.target.value }); renderStats(); });
       $("[data-open]", tr).addEventListener("click", () => openDialog(id));
       $$("[data-dl]", tr).forEach((b) => b.addEventListener("click", () => downloadDoc(id, b.dataset.dl)));
+      $$("[data-attach]", tr).forEach((input) => input.addEventListener("change", () => { const f = input.files[0]; input.value = ""; attachDoc(id, input.dataset.attach, f); }));
     });
     renderStats();
     updateCount();
+    refreshOriginals();
   }
+  // Fichiers d'origine absents de cet appareil : bouton « joindre » à la place du téléchargement, et bandeau
+  async function refreshOriginals() {
+    const local = await localHashes(), all = ATS.store.list();
+    $$("#apps tbody tr[data-id]").forEach((tr) => {
+      const a = all.find((x) => x.id === tr.dataset.id);
+      if (!a) return;
+      ["cv", "letter"].forEach((k) => {
+        const b = $('[data-dl="' + k + '"]', tr);
+        if (!b || hasLocal(a, k, local)) return;
+        b.outerHTML = attachLabel(k);
+        const input = $('[data-attach="' + k + '"]', tr);
+        input.addEventListener("change", () => { const f = input.files[0]; input.value = ""; attachDoc(a.id, k, f); });
+      });
+    });
+    const missing = all.filter((a) => ["cv", "letter"].some((k) => a[k + "Text"] && !hasLocal(a, k, local))).length;
+    $("#orig-missing").hidden = !missing;
+    if (missing) $("#orig-missing-text").textContent = missing + (missing > 1 ? " candidatures n'ont" : " candidature n'a") + " pas leur fichier d'origine sur cet appareil.";
+  }
+  // « Retrouver mes fichiers » : chaque fichier importé est rattaché aux candidatures enregistrées avec ce document
+  $("#orig-files").addEventListener("change", async (e) => {
+    const files = [...e.target.files];
+    e.target.value = "";
+    let linked = 0;
+    const unmatched = [];
+    for (const f of files) {
+      let text = null;
+      try { text = (await ATS.extractFile(f)).text; } catch (err) { text = null; }
+      let matched = false;
+      for (const k of ["cv", "letter"]) {
+        if (text === null || !ATS.store.list().some((a) => sameText(a[k + "Text"], text))) continue;
+        matched = true;
+        try { linked += await linkByText(k, text, await ATS.files.put(f), f.name); } catch (err) { toast("Impossible de garder " + f.name + " : " + err.message); }
+      }
+      if (!matched) unmatched.push(f.name);
+    }
+    persistStorage();
+    renderHistory();
+    toast((linked ? "📎 " + linked + " document" + (linked > 1 ? "s" : "") + " d'origine rattaché" + (linked > 1 ? "s" : "") + " à tes candidatures." : "Aucune candidature à compléter avec ces fichiers.") +
+      (unmatched.length ? " Sans correspondance (document modifié depuis l'analyse ?) : " + unmatched.join(", ") + ". Joins-les depuis la candidature concernée." : ""));
+  });
 
   function renderStats() {
     const all = ATS.store.list();
@@ -783,10 +875,12 @@
       const ref = a[k + "File"], st = $("#dlg-body [data-doc-state=" + k + "]");
       if (!ref || !st) return;
       ATS.files.get(ref.hash).then((f) => {
-        st.textContent = f ? "Fichier d'origine" : "Fichier d'origine gardé sur un autre appareil : PDF reconstitué en attendant, ou joins-le ici";
-        st.classList.toggle("muted", !f);
-        const lbl = $("#dlg-body [data-attach-label=" + k + "]");
-        if (lbl && !f) lbl.firstChild.textContent = "Joindre le fichier d'origine";
+        if (f) return;
+        st.textContent = "Fichier d'origine resté sur l'appareil où la candidature a été enregistrée : joins-le ici";
+        st.closest(".dlg-doc").classList.add("is-missing");
+        const dl = $('#dlg-body .dlg-docs [data-dl="' + k + '"]'), lbl = $("#dlg-body [data-attach-label=" + k + "]");
+        if (dl) dl.remove();
+        if (lbl) { lbl.classList.replace("btn-ghost", "btn-primary"); lbl.firstChild.textContent = "Joindre le fichier d'origine"; }
       }).catch(() => {});
     });
   }
@@ -794,11 +888,11 @@
     const row = (k, icon) => {
       const ref = a[k + "File"], text = a[k + "Text"];
       if (!ref && !text) return "";
-      return '<div class="dlg-doc' + (ref ? "" : " is-rebuilt") + '"><span class="dlg-doc-ic" aria-hidden="true">' + icon + "</span><div><b>" + DOC_LABEL[k] + "</b>" +
-        "<small>" + (ref ? esc(ref.name) + " · " + ATS.files.formatSize(ref.size) + ' · <span data-doc-state="' + k + '">Fichier d\'origine</span>'
-          : "Fichier d'origine non gardé : PDF recréé à partir du texte. Joins le PDF d'origine pour retrouver le même document.") + "</small></div>" +
-        '<div class="dlg-doc-actions"><button type="button" class="btn btn-primary btn-small" data-dl="' + k + '">' + DL_ICON + (ref ? "Télécharger" : "Télécharger (PDF recréé)") + "</button>" +
-        '<label class="btn btn-ghost btn-small file-btn" data-attach-label="' + k + '">' + (ref ? "Remplacer" : "Joindre le PDF d'origine") +
+      return '<div class="dlg-doc' + (ref ? "" : " is-missing") + '"><span class="dlg-doc-ic" aria-hidden="true">' + icon + "</span><div><b>" + DOC_LABEL[k] + "</b>" +
+        "<small>" + (ref ? esc(ref.name) + " · " + ATS.files.formatSize(ref.size) + ' · <span data-doc-state="' + k + '">Fichier d\'origine, mise en page intacte</span>'
+          : "Fichier d'origine non gardé (candidature enregistrée avant cette fonction, ou texte collé) : joins ton PDF d'origine.") + "</small></div>" +
+        '<div class="dlg-doc-actions">' + (ref ? '<button type="button" class="btn btn-primary btn-small" data-dl="' + k + '">' + DL_ICON + "Télécharger</button>" : "") +
+        '<label class="btn ' + (ref ? "btn-ghost" : "btn-primary") + ' btn-small file-btn" data-attach-label="' + k + '">' + (ref ? "Remplacer" : "Joindre le PDF d'origine") +
         '<input type="file" accept=".pdf,.docx,application/pdf" data-attach="' + k + '" hidden></label></div></div>';
     };
     const rows = row("cv", "📄") + row("letter", "✉️");

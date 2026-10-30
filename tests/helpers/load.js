@@ -1,7 +1,7 @@
 // Charge les scripts du navigateur (window.ATS) dans Node pour les tests
 const path = require("path");
 const ROOT = path.join(__dirname, "..", "..", "assets", "js");
-const FILES = ["keywords.js", "analyzer.js", "profile.js", "offer.js", "search.js", "prompt.js", "files.js", "pdf-writer.js"];
+const FILES = ["keywords.js", "analyzer.js", "profile.js", "offer.js", "search.js", "prompt.js", "files.js"];
 
 module.exports = function loadATS() {
   global.window = global;
