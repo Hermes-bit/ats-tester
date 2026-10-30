@@ -652,7 +652,13 @@ html.page-hidden *, html.page-hidden *::before, html.page-hidden *::after { anim
 .search-help { margin: 0 0 12px; font-size: 12.5px; }
 .search-help code, .hook code { font: 12px/1 var(--mono); padding: 2px 5px; border-radius: 5px; background: var(--surface-2); color: var(--accent-text); }
 .apps tr.is-archived td { opacity: .6; }
-.tag-arch { background: var(--bad-bg); color: var(--bad); border-color: rgba(251, 113, 133, .35); }
+.tag-arch { background: rgba(255, 255, 255, .06); color: var(--muted); border-color: var(--border); }
+.tag-block, .tag-check { font-size: 11px; padding: 2px 9px; white-space: nowrap; cursor: help; }
+.tag-block { background: var(--bad-bg); color: #FDA4AF; border-color: rgba(251, 113, 133, .5); box-shadow: 0 0 14px -6px rgba(251, 113, 133, .9); }
+.tag-check { background: var(--mid-bg); color: #FCD34D; border-color: rgba(251, 191, 36, .45); }
+.dlg-prereq { display: grid; gap: 8px; }
+.dlg-prereq .ko-banner { margin: 0; }
+.dlg-prereq .ko { padding: 10px 12px; }
 .hook { margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, .03); border: 1px solid var(--border); }
 .hook summary { cursor: pointer; font-weight: 700; font-size: 14px; }
 .hook p { margin: 8px 0; }

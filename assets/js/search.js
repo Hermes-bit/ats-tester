@@ -105,11 +105,18 @@ window.ATS = window.ATS || {};
     }
   }
 
+  function prereqLabel(a) {
+    const ko = Array.isArray(a.knockouts) ? a.knockouts : [];
+    if (ko.some((k) => k.status === "fail") || (!ko.length && a.statusAuto === "DISQUALIFIED_AUTO")) return "pre-requis bloquant bloque";
+    if (ko.some((k) => k.status === "unknown" && k.id !== "work_auth")) return "pre-requis a verifier";
+    return "";
+  }
+
   /** Index de recherche d'une candidature (textes repliés, sans accents). */
   function indexApplication(a) {
     const p = a.profile || {};
     const fields = {
-      entreprise: fold(a.company), poste: fold(a.title), statut: fold(a.status), notes: fold(a.notes), offre: fold(a.jdText),
+      entreprise: fold(a.company), poste: fold(a.title), statut: fold(a.status + " " + prereqLabel(a)), notes: fold(a.notes), offre: fold(a.jdText),
       cv: fold((a.cvText || "") + " " + (p.unparsed_rich_text || "")), lettre: fold(a.letterText),
       competences: fold((p.competences || []).map((c) => c.nom_skill).join(" ")),
       ville: fold(p.candidat && p.candidat.localisation ? p.candidat.localisation.ville : ""),

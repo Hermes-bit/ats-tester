@@ -384,6 +384,7 @@
   /* ---------- Enregistrement ---------- */
   const statusSel = $("#save-status"), filterSel = $("#filter-status");
   ATS.store.STATUSES.forEach((s) => { statusSel.add(new Option(s, s)); filterSel.add(new Option(s, s)); });
+  filterSel.add(new Option("⛔ Pré-requis bloquant", "__blocked"));
   statusSel.value = "Envoyée";
 
   // Candidature en cours de modification, seulement si l'offre affichée est toujours la même :
@@ -413,11 +414,11 @@
       ignored: [...state.ignored], analyzedAt: r.date,
       pillars: r.cv ? r.cv.pillarScores : null, profile: r.cv ? profileToSave(r.cv.profile) : null,
       knockouts: r.knockouts.map(({ id, question, status, answer, auto }) => ({ id, question, status, answer, auto })),
-      knockoutAnswers: { ...state.answers }, statusAuto: r.status,
+      knockoutAnswers: { ...state.answers }, statusAuto: r.status, schema: 2,
     };
-    // Critère éliminatoire non rempli : statut DISQUALIFIED_AUTO, archivage et webhook automatiques
+    // Critère éliminatoire non rempli : enregistrée normalement (statut choisi, visible dans l'historique)
+    // avec l'étiquette « Pré-requis bloquant » ; le webhook éventuel est prévenu
     const disq = r.status === "DISQUALIFIED_AUTO";
-    if (disq) { app.status = DISQ_STATUS; app.archived = true; statusSel.value = DISQ_STATUS; }
     // CV et lettre d'origine : gardés sur cet appareil pour être retéléchargés depuis Mes candidatures
     $("#btn-save").disabled = true;
     const prev = app.id ? ATS.store.get(app.id) : null;
@@ -435,7 +436,7 @@
     pruneFiles();
     $("#btn-save").textContent = "Mettre à jour la candidature";
     const kept = [saved.cvFile && "CV", saved.letterFile && "lettre"].filter(Boolean);
-    $("#save-msg").textContent = (disq ? "⛔ Éliminée automatiquement : enregistrée et archivée" + (ATS.store.getWebhook() ? ", webhook envoyé" : "") : "✓ Enregistrée dans Mes candidatures") +
+    $("#save-msg").textContent = "✓ Enregistrée dans Mes candidatures" + (disq ? " avec l'étiquette « ⛔ Pré-requis bloquant »" + (ATS.store.getWebhook() ? ", webhook prévenu" : "") : "") +
       (kept.length ? " · " + kept.join(" et ") + " d'origine " + (kept.length > 1 ? "gardés" : "gardé") + ", téléchargeable" + (kept.length > 1 ? "s" : "") + " depuis l'historique" : "") +
       (fileErrors.length ? " · " + fileErrors[0] : "");
     if (disq) fireWebhook(saved, r);
@@ -541,7 +542,7 @@
     const banner = $("#ko-banner");
     banner.className = "ko-banner " + (failed.length ? "fail" : unknown.length ? "unknown" : "pass");
     banner.innerHTML = failed.length
-      ? "⛔ <b>Éliminée automatiquement</b> (DISQUALIFIED_AUTO) : " + failed.length + " critère" + (failed.length > 1 ? "s" : "") + " non rempli" + (failed.length > 1 ? "s" : "") + ". Si tu l'enregistres, elle sera archivée automatiquement."
+      ? "⛔ <b>Éliminée automatiquement</b> (DISQUALIFIED_AUTO) : " + failed.length + " critère" + (failed.length > 1 ? "s" : "") + " non rempli" + (failed.length > 1 ? "s" : "") + ". Tu peux quand même l'enregistrer : elle sera marquée « Pré-requis bloquant » dans tes candidatures."
       : unknown.length ? "❔ " + unknown.length + " question" + (unknown.length > 1 ? "s" : "") + " sans réponse : l'ATS te les posera au moment de postuler. Réponds pour simuler son tri."
       : "✅ Aucun critère éliminatoire bloquant.";
     $("#ko-list").innerHTML = items.map((k) => {
@@ -617,6 +618,22 @@
       p.unparsed_blocks.map((b) => '<div class="blk"><b>' + esc(b.header || "Bloc") + "</b> · " + esc(b.reason) + "<pre>" + esc(b.text) + "</pre></div>").join("") + "</details>" : "";
   }
 
+  /* ---------- Pré-requis du poste : étiquettes ---------- */
+  // Critères éliminatoires enregistrés avec la candidature : non remplis (bloquant) ou sans réponse (à vérifier)
+  function prereq(a) {
+    const ko = Array.isArray(a.knockouts) ? a.knockouts : [];
+    const failed = ko.filter((k) => k.status === "fail");
+    const unknown = ko.filter((k) => k.status === "unknown" && k.id !== "work_auth");
+    return { blocked: failed.length > 0 || (!ko.length && a.statusAuto === "DISQUALIFIED_AUTO"), failed, unknown };
+  }
+  function prereqTag(a) {
+    const p = prereq(a);
+    if (p.blocked) return '<span class="tag tag-block" title="' + esc(p.failed.map((k) => k.question).join(" · ") || "Critère éliminatoire non rempli") + '">⛔ Pré-requis bloquant</span>';
+    if (p.unknown.length) return '<span class="tag tag-check" title="' + esc(p.unknown.map((k) => k.question).join(" · ")) + '">❔ Pré-requis à vérifier</span>';
+    return "";
+  }
+  const BLOCKED_FILTER = "__blocked";
+
   /* ---------- Historique ---------- */
   function updateCount() { $("#history-count").textContent = ATS.store.list().length; }
   $("#search").addEventListener("input", renderHistory);
@@ -637,12 +654,12 @@
   function renderHistory() {
     const all = ATS.store.list();
     const f = filterSel.value, match = ATS.search.compile($("#search").value), showArch = $("#show-archived").checked || f === DISQ_STATUS;
-    const list = all.filter((a) => (showArch || !a.archived) && (!f || a.status === f) && match(a));
+    const list = all.filter((a) => (showArch || !a.archived) && (!f || (f === BLOCKED_FILTER ? prereq(a).blocked : a.status === f)) && match(a));
     const nArch = all.filter((a) => a.archived).length;
     $("#search-info").textContent = (list.length !== all.length ? list.length + " sur " + all.length + " candidature" + (all.length > 1 ? "s" : "") : all.length + " candidature" + (all.length > 1 ? "s" : "")) + (nArch && !showArch ? " · " + nArch + " archivée" + (nArch > 1 ? "s" : "") + " masquée" + (nArch > 1 ? "s" : "") : "");
     const tbody = $("#apps tbody");
     tbody.innerHTML = list.map((a) =>
-      '<tr data-id="' + esc(a.id) + '"' + (a.archived ? ' class="is-archived"' : "") + '><td class="c-date" data-label="Date">' + fmtDate(a.appliedAt) + '</td><td class="wrap-cell c-company" data-label="Entreprise"><b>' + esc(a.company) + "</b>" + (a.archived ? ' <span class="tag tag-arch">archivée</span>' : "") + '</td><td class="wrap-cell c-title" data-label="Poste">' + esc(a.title) + "</td>" +
+      '<tr data-id="' + esc(a.id) + '"' + (a.archived ? ' class="is-archived"' : "") + '><td class="c-date" data-label="Date">' + fmtDate(a.appliedAt) + '</td><td class="wrap-cell c-company" data-label="Entreprise"><b>' + esc(a.company) + "</b>" + prereqTag(a) + (a.archived ? ' <span class="tag tag-arch">archivée</span>' : "") + '</td><td class="wrap-cell c-title" data-label="Poste">' + esc(a.title) + "</td>" +
       '<td class="c-status" data-label="Statut"><select data-status aria-label="Statut">' + ATS.store.STATUSES.map((s) => "<option" + (s === a.status ? " selected" : "") + ">" + esc(s) + "</option>").join("") + "</select></td>" +
       '<td class="c-score" data-label="CV">' + pill(a.scores && a.scores.cv) + '</td><td class="c-score" data-label="Lettre">' + pill(a.scores && a.scores.letter) + '</td><td class="docs-cell" data-label="Documents">' + docButtons(a) + '</td><td class="c-open"><button class="btn btn-ghost btn-small" data-open>Ouvrir</button></td></tr>').join("");
     $("#empty").hidden = all.length > 0;
@@ -686,7 +703,7 @@
       '<div class="fields"><label class="field"><span>Statut</span><select id="d-status">' + ATS.store.STATUSES.map((s) => "<option" + (s === a.status ? " selected" : "") + ">" + esc(s) + "</option>").join("") + '</select></label>' +
       '<label class="field"><span>Date de candidature</span><input id="d-date" type="date" value="' + esc(a.appliedAt || "") + '"></label>' +
       '<label class="field field-wide"><span>Notes</span><textarea id="d-notes" rows="3">' + esc(a.notes || "") + "</textarea></label></div>" +
-      (a.knockouts && a.knockouts.some((k) => k.status === "fail") ? '<div class="notice ko-notice">⛔ Éliminée automatiquement : ' + a.knockouts.filter((k) => k.status === "fail").map((k) => esc(k.question)).join(" ") + "</div>" : "") +
+      dialogPrereq(a) +
       (a.pillars ? '<div class="muted small">Piliers du CV : compétences ' + (a.pillars.hard === null ? "n/a" : a.pillars.hard + " %") + " · contexte " + (a.pillars.context === null ? "n/a" : a.pillars.context + " %") + " · atouts " + (a.pillars.nice === null ? "n/a" : a.pillars.nice + " %") + "</div>" : "") +
       dialogDocs(a) +
       '<label class="check"><input type="checkbox" id="d-archived"' + (a.archived ? " checked" : "") + "> Archivée</label>" +
@@ -695,6 +712,12 @@
       (a.cvText ? "<details><summary>Texte du CV envoyé</summary><pre>" + esc(a.cvText) + "</pre></details>" : "") +
       (a.letterText ? "<details><summary>Texte de la lettre envoyée</summary><pre>" + esc(a.letterText) + "</pre></details>" : "");
     $$("#dlg-body [data-dl], #dlg-body [data-dl-text]").forEach((b) => b.addEventListener("click", () => downloadDoc(id, b.dataset.dl || b.dataset.dlText, !!b.dataset.dlText)));
+    $$("#d-prereq .ko-ans button").forEach((b) => b.addEventListener("click", () => {
+      const kid = b.closest("li").dataset.ko, v = b.dataset.v === "1";
+      if (dlgAnswers[kid] === v) delete dlgAnswers[kid]; else dlgAnswers[kid] = v;
+      refreshDialogPrereq();
+    }));
+    refreshDialogPrereq();
     // Fichier d'origine présent sur cet appareil ?
     ["cv", "letter"].forEach((k) => {
       const ref = a[k + "File"], st = $("#dlg-body [data-doc-state=" + k + "]");
@@ -705,6 +728,36 @@
     setRing($("#d-ring-c"), a.scores ? a.scores.cv : null);
     setRing($("#d-ring-l"), a.scores ? a.scores.letter : null);
     dlg.showModal();
+  }
+  // Réponses modifiables dans la fenêtre (enregistrées avec « Enregistrer »)
+  let dlgAnswers = {};
+  function koValue(k, answers) { const a = answers[k.id]; return a === true || a === false ? a : k.auto; }
+  function dialogPrereq(a) {
+    const ko = Array.isArray(a.knockouts) ? a.knockouts : [];
+    dlgAnswers = { ...(a.knockoutAnswers || {}) };
+    if (!ko.length) return "";
+    return '<div class="dlg-prereq"><div class="label">Pré-requis du poste <span class="muted small">(critères éliminatoires)</span></div>' +
+      '<div class="dlg-prereq-state" id="d-prereq-state"></div><ul class="ko-list" id="d-prereq">' +
+      ko.map((k) => '<li class="ko" data-ko="' + esc(k.id) + '"><span class="ko-ic" aria-hidden="true"></span><div class="ko-q"><b>' + esc(k.question) + "</b></div>" +
+        '<div class="ko-ans" role="group" aria-label="Ta réponse"><button type="button" data-v="1">Oui</button><button type="button" data-v="0">Non</button></div></li>').join("") + "</ul></div>";
+  }
+  function refreshDialogPrereq() {
+    const a = ATS.store.get(state.dialogId);
+    if (!a || !Array.isArray(a.knockouts) || !$("#d-prereq")) return;
+    let failed = 0, unknown = 0;
+    a.knockouts.forEach((k) => {
+      const li = $('#d-prereq [data-ko="' + k.id + '"]'), v = koValue(k, dlgAnswers);
+      const st = v === true ? "pass" : v === false ? "fail" : "unknown";
+      if (st === "fail") failed++; else if (st === "unknown" && k.id !== "work_auth") unknown++;
+      li.className = "ko " + st;
+      $(".ko-ic", li).textContent = st === "pass" ? "✓" : st === "fail" ? "✗" : "?";
+      $('[data-v="1"]', li).setAttribute("aria-pressed", String(v === true));
+      $('[data-v="0"]', li).setAttribute("aria-pressed", String(v === false));
+    });
+    const box = $("#d-prereq-state");
+    box.className = "ko-banner " + (failed ? "fail" : unknown ? "unknown" : "pass");
+    box.textContent = failed ? "⛔ Pré-requis bloquant : " + failed + " critère" + (failed > 1 ? "s" : "") + " non rempli" + (failed > 1 ? "s" : "") + "."
+      : unknown ? "❔ " + unknown + " pré-requis à vérifier." : "✅ Tous les pré-requis sont remplis.";
   }
   function dialogDocs(a) {
     const row = (k, icon) => {
@@ -719,7 +772,16 @@
     return rows ? '<div class="dlg-docs"><div class="label">Documents envoyés pour cette offre</div>' + rows + "</div>" : "";
   }
   $("#dlg-save").addEventListener("click", () => {
-    ATS.store.upsert({ id: state.dialogId, status: $("#d-status").value, appliedAt: $("#d-date").value, notes: $("#d-notes").value, archived: $("#d-archived").checked });
+    const a = ATS.store.get(state.dialogId), patch = { id: state.dialogId, status: $("#d-status").value, appliedAt: $("#d-date").value, notes: $("#d-notes").value, archived: $("#d-archived").checked };
+    if (a && Array.isArray(a.knockouts) && a.knockouts.length) {
+      patch.knockouts = a.knockouts.map((k) => {
+        const answer = dlgAnswers[k.id] === true || dlgAnswers[k.id] === false ? dlgAnswers[k.id] : null, v = answer !== null ? answer : k.auto;
+        return { ...k, answer, status: v === true ? "pass" : v === false ? "fail" : "unknown" };
+      });
+      patch.knockoutAnswers = { ...dlgAnswers };
+      patch.statusAuto = patch.knockouts.some((k) => k.status === "fail") ? "DISQUALIFIED_AUTO" : "OK";
+    }
+    ATS.store.upsert(patch);
     dlg.close(); renderHistory();
   });
   $("#dlg-delete").addEventListener("click", () => {
@@ -820,6 +882,10 @@
     : "Tes candidatures sont gardées dans ton espace, sur cet appareil. Exporte-les régulièrement pour en garder une copie ou les passer sur un autre appareil : l'export inclut tes fichiers CV et lettre.";
   renderSync();
   renderClaim();
+  // Versions précédentes : une candidature bloquée était archivée d'office sous « Éliminée (auto) ».
+  // Elle redevient visible (une seule fois : un archivage choisi ensuite est respecté).
+  ATS.store.list().filter((a) => !a.schema && a.archived && a.status === DISQ_STATUS && a.statusAuto === "DISQUALIFIED_AUTO")
+    .forEach((a) => ATS.store.upsert({ id: a.id, archived: false, schema: 2 }));
   if (location.hash === "#candidatures") showView("history", "replace");
   $("#year").textContent = new Date().getFullYear();
   updateCount();
