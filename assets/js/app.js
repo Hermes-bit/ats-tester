@@ -107,7 +107,7 @@
     st.innerHTML = "Lecture de « " + esc(file.name) + " »…";
     try {
       const res = await ATS.extractFile(file);
-      state.docs[kind] = { text: res.text, name: file.name, meta: res.meta };
+      state.docs[kind] = { text: res.text, name: file.name, meta: res.meta, file };
       renderDocStatus(kind);
     } catch (e) {
       state.docs[kind] = null;
@@ -397,9 +397,9 @@
     return state.editingId;
   }
 
-  $("#btn-save").addEventListener("click", () => {
+  $("#btn-save").addEventListener("click", async () => {
     const r = state.result;
-    if (!r) return;
+    if (!r || $("#btn-save").disabled) return;
     const company = $("#company").value.trim(), title = $("#title").value.trim();
     if (!company) { $("#save-msg").innerHTML = '<span class="error">Indique le nom de l\'entreprise (étape 1).</span>'; $("#company").focus(); return; }
     const cv = getDoc("cv"), letter = getDoc("letter");
@@ -418,13 +418,62 @@
     // Critère éliminatoire non rempli : statut DISQUALIFIED_AUTO, archivage et webhook automatiques
     const disq = r.status === "DISQUALIFIED_AUTO";
     if (disq) { app.status = DISQ_STATUS; app.archived = true; statusSel.value = DISQ_STATUS; }
+    // CV et lettre d'origine : gardés sur cet appareil pour être retéléchargés depuis Mes candidatures
+    $("#btn-save").disabled = true;
+    const prev = app.id ? ATS.store.get(app.id) : null;
+    const fileErrors = [];
+    for (const [k, doc] of [["cv", cv], ["letter", letter]]) {
+      let ref = null;
+      if (doc && doc.file) {
+        try { ref = await ATS.files.put(doc.file); } catch (e) { fileErrors.push(e.message); }
+      } else if (doc && prev && prev[k + "File"] && (prev[k + "Text"] || "") === doc.text) ref = prev[k + "File"]; // même document rouvert depuis l'historique
+      app[k + "File"] = ref;
+    }
+    $("#btn-save").disabled = false;
     const saved = ATS.store.upsert(app);
     state.editingId = saved.id;
+    pruneFiles();
     $("#btn-save").textContent = "Mettre à jour la candidature";
-    $("#save-msg").textContent = disq ? "⛔ Éliminée automatiquement : enregistrée et archivée" + (ATS.store.getWebhook() ? ", webhook envoyé" : "") : "✓ Enregistrée dans Mes candidatures";
+    const kept = [saved.cvFile && "CV", saved.letterFile && "lettre"].filter(Boolean);
+    $("#save-msg").textContent = (disq ? "⛔ Éliminée automatiquement : enregistrée et archivée" + (ATS.store.getWebhook() ? ", webhook envoyé" : "") : "✓ Enregistrée dans Mes candidatures") +
+      (kept.length ? " · " + kept.join(" et ") + " d'origine " + (kept.length > 1 ? "gardés" : "gardé") + ", téléchargeable" + (kept.length > 1 ? "s" : "") + " depuis l'historique" : "") +
+      (fileErrors.length ? " · " + fileErrors[0] : "");
     if (disq) fireWebhook(saved, r);
     updateCount();
   });
+
+  /* ---------- Téléchargement du CV et de la lettre d'une candidature ---------- */
+  const DOC_LABEL = { cv: "CV", letter: "Lettre de motivation" };
+  const DL_ICON = '<span class="dl-ic" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 2.5v7.5M4.8 7 8 10.2 11.2 7M3.5 13.5h9"/></svg></span>';
+  // Fichiers que plus aucune candidature n'utilise (en mode cloud, seulement une fois la liste à jour)
+  function pruneFiles() {
+    if (ATS.store.cloud && ATS.store.syncState() !== "ok") return;
+    const used = ATS.store.list().flatMap((a) => [a.cvFile, a.letterFile]).filter(Boolean).map((f) => f.hash);
+    ATS.files.prune(used).catch(() => {});
+  }
+  async function downloadDoc(id, kind, asText) {
+    const a = ATS.store.get(id);
+    if (!a) return;
+    const ref = a[kind + "File"], text = a[kind + "Text"];
+    if (ref && !asText) {
+      let f = null;
+      try { f = await ATS.files.get(ref.hash); } catch (e) { f = null; }
+      if (f) { ATS.files.download(f.blob, a.company + " - " + f.name); return; }
+      if (!text) { toast("Le fichier d'origine n'est gardé que sur l'appareil où la candidature a été enregistrée."); return; }
+      toast("Fichier d'origine absent de cet appareil : téléchargement du texte lu par l'ATS.");
+    }
+    if (text) ATS.files.download(new Blob(["\ufeff" + text.replace(/\r?\n/g, "\r\n")], { type: "text/plain;charset=utf-8" }), a.company + " - " + DOC_LABEL[kind] + " (texte).txt");
+  }
+  function docButtons(a) {
+    const btn = (k) => {
+      const ref = a[k + "File"], text = a[k + "Text"];
+      if (!ref && !text) return "";
+      const what = ref ? ref.name + " · " + ATS.files.formatSize(ref.size) : "texte lu par l'ATS (.txt)";
+      return '<button type="button" class="dl-btn" data-dl="' + k + '" title="Télécharger : ' + esc(what) + '" aria-label="Télécharger ' + (k === "cv" ? "le CV" : "la lettre") + " (" + esc(what) + ')">' +
+        DL_ICON + (k === "cv" ? "CV" : "Lettre") + (ref ? "" : ' <small>txt</small>') + "</button>";
+    };
+    return btn("cv") + btn("letter") || '<span class="muted">—</span>';
+  }
 
   /* ---------- Espace personnel ---------- */
   const me = ATS.auth.user();
@@ -593,15 +642,16 @@
     $("#search-info").textContent = (list.length !== all.length ? list.length + " sur " + all.length + " candidature" + (all.length > 1 ? "s" : "") : all.length + " candidature" + (all.length > 1 ? "s" : "")) + (nArch && !showArch ? " · " + nArch + " archivée" + (nArch > 1 ? "s" : "") + " masquée" + (nArch > 1 ? "s" : "") : "");
     const tbody = $("#apps tbody");
     tbody.innerHTML = list.map((a) =>
-      '<tr data-id="' + esc(a.id) + '"' + (a.archived ? ' class="is-archived"' : "") + '><td>' + fmtDate(a.appliedAt) + '</td><td class="wrap-cell"><b>' + esc(a.company) + "</b>" + (a.archived ? ' <span class="tag tag-arch">archivée</span>' : "") + '</td><td class="wrap-cell">' + esc(a.title) + "</td>" +
-      "<td><select data-status>" + ATS.store.STATUSES.map((s) => "<option" + (s === a.status ? " selected" : "") + ">" + esc(s) + "</option>").join("") + "</select></td>" +
-      "<td>" + pill(a.scores && a.scores.cv) + "</td><td>" + pill(a.scores && a.scores.letter) + '</td><td><button class="btn btn-ghost btn-small" data-open>Ouvrir</button></td></tr>').join("");
+      '<tr data-id="' + esc(a.id) + '"' + (a.archived ? ' class="is-archived"' : "") + '><td class="c-date" data-label="Date">' + fmtDate(a.appliedAt) + '</td><td class="wrap-cell c-company" data-label="Entreprise"><b>' + esc(a.company) + "</b>" + (a.archived ? ' <span class="tag tag-arch">archivée</span>' : "") + '</td><td class="wrap-cell c-title" data-label="Poste">' + esc(a.title) + "</td>" +
+      '<td class="c-status" data-label="Statut"><select data-status aria-label="Statut">' + ATS.store.STATUSES.map((s) => "<option" + (s === a.status ? " selected" : "") + ">" + esc(s) + "</option>").join("") + "</select></td>" +
+      '<td class="c-score" data-label="CV">' + pill(a.scores && a.scores.cv) + '</td><td class="c-score" data-label="Lettre">' + pill(a.scores && a.scores.letter) + '</td><td class="docs-cell" data-label="Documents">' + docButtons(a) + '</td><td class="c-open"><button class="btn btn-ghost btn-small" data-open>Ouvrir</button></td></tr>').join("");
     $("#empty").hidden = all.length > 0;
     $("#apps").hidden = all.length === 0;
     $$("tr[data-id]", tbody).forEach((tr) => {
       const id = tr.dataset.id;
       $("[data-status]", tr).addEventListener("change", (e) => { ATS.store.upsert({ id, status: e.target.value }); renderStats(); });
       $("[data-open]", tr).addEventListener("click", () => openDialog(id));
+      $$("[data-dl]", tr).forEach((b) => b.addEventListener("click", () => downloadDoc(id, b.dataset.dl)));
     });
     renderStats();
     updateCount();
@@ -638,15 +688,35 @@
       '<label class="field field-wide"><span>Notes</span><textarea id="d-notes" rows="3">' + esc(a.notes || "") + "</textarea></label></div>" +
       (a.knockouts && a.knockouts.some((k) => k.status === "fail") ? '<div class="notice ko-notice">⛔ Éliminée automatiquement : ' + a.knockouts.filter((k) => k.status === "fail").map((k) => esc(k.question)).join(" ") + "</div>" : "") +
       (a.pillars ? '<div class="muted small">Piliers du CV : compétences ' + (a.pillars.hard === null ? "n/a" : a.pillars.hard + " %") + " · contexte " + (a.pillars.context === null ? "n/a" : a.pillars.context + " %") + " · atouts " + (a.pillars.nice === null ? "n/a" : a.pillars.nice + " %") + "</div>" : "") +
+      dialogDocs(a) +
       '<label class="check"><input type="checkbox" id="d-archived"' + (a.archived ? " checked" : "") + "> Archivée</label>" +
       (a.missingCv && a.missingCv.length ? '<div><div class="label" style="margin-bottom:6px">Mots-clés absents du CV lors de l\'analyse</div><div class="chips">' + a.missingCv.map((m) => '<span class="chip">' + esc(m) + "</span>").join("") + "</div></div>" : "") +
       "<details><summary>Fiche de poste enregistrée</summary><pre>" + esc(a.jdText || "") + "</pre></details>" +
       (a.cvText ? "<details><summary>Texte du CV envoyé</summary><pre>" + esc(a.cvText) + "</pre></details>" : "") +
       (a.letterText ? "<details><summary>Texte de la lettre envoyée</summary><pre>" + esc(a.letterText) + "</pre></details>" : "");
+    $$("#dlg-body [data-dl], #dlg-body [data-dl-text]").forEach((b) => b.addEventListener("click", () => downloadDoc(id, b.dataset.dl || b.dataset.dlText, !!b.dataset.dlText)));
+    // Fichier d'origine présent sur cet appareil ?
+    ["cv", "letter"].forEach((k) => {
+      const ref = a[k + "File"], st = $("#dlg-body [data-doc-state=" + k + "]");
+      if (!ref || !st) return;
+      ATS.files.get(ref.hash).then((f) => { st.textContent = f ? "Fichier d'origine" : "Fichier d'origine gardé sur un autre appareil"; st.classList.toggle("muted", !f); }).catch(() => {});
+    });
     setRing($("#d-ring-g"), a.scores ? a.scores.global : null);
     setRing($("#d-ring-c"), a.scores ? a.scores.cv : null);
     setRing($("#d-ring-l"), a.scores ? a.scores.letter : null);
     dlg.showModal();
+  }
+  function dialogDocs(a) {
+    const row = (k, icon) => {
+      const ref = a[k + "File"], text = a[k + "Text"];
+      if (!ref && !text) return "";
+      return '<div class="dlg-doc"><span class="dlg-doc-ic" aria-hidden="true">' + icon + "</span><div><b>" + DOC_LABEL[k] + "</b>" +
+        "<small>" + (ref ? esc(ref.name) + " · " + ATS.files.formatSize(ref.size) + ' · <span data-doc-state="' + k + '">Fichier d\'origine</span>' : "Texte collé ou lu par l'ATS") + "</small></div>" +
+        '<div class="dlg-doc-actions">' + (ref ? '<button type="button" class="btn btn-primary btn-small" data-dl="' + k + '">' + DL_ICON + "Télécharger</button>" : "") +
+        (text ? '<button type="button" class="btn btn-ghost btn-small" data-dl-text="' + k + '">Texte (.txt)</button>' : "") + "</div></div>";
+    };
+    const rows = row("cv", "📄") + row("letter", "✉️");
+    return rows ? '<div class="dlg-docs"><div class="label">Documents envoyés pour cette offre</div>' + rows + "</div>" : "";
   }
   $("#dlg-save").addEventListener("click", () => {
     ATS.store.upsert({ id: state.dialogId, status: $("#d-status").value, appliedAt: $("#d-date").value, notes: $("#d-notes").value, archived: $("#d-archived").checked });
@@ -657,22 +727,30 @@
     const btn = $("#dlg-delete");
     if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.textContent = "Confirmer la suppression ?"; return; }
     ATS.store.remove(state.dialogId);
+    pruneFiles();
     btn.dataset.confirm = ""; btn.textContent = "Supprimer";
     dlg.close(); renderHistory();
     if (state.editingId === (a && a.id)) state.editingId = null;
   });
   dlg.addEventListener("close", () => { const b = $("#dlg-delete"); b.dataset.confirm = ""; b.textContent = "Supprimer"; });
-  $("#dlg-reload").addEventListener("click", () => {
+  $("#dlg-reload").addEventListener("click", async () => {
     const a = ATS.store.get(state.dialogId);
     if (!a) return;
     $("#company").value = a.company; $("#title").value = a.title; $("#url").value = a.url || ""; jd.value = a.jdText || "";
-    ["cv", "letter"].forEach((k) => {
-      const text = k === "cv" ? a.cvText : a.letterText;
+    for (const k of ["cv", "letter"]) {
+      const text = k === "cv" ? a.cvText : a.letterText, ref = a[k + "File"];
       state.docs[k] = null;
-      togglePaste(k, !!text);
-      $("#paste-" + k).value = text || "";
-      renderDocStatus(k);
-    });
+      let f = null;
+      if (ref) { try { f = await ATS.files.get(ref.hash); } catch (e) { f = null; } }
+      if (f) {
+        $("#paste-" + k).value = ""; togglePaste(k, false);
+        await loadDoc(k, new File([f.blob], f.name, { type: f.type }));
+      } else {
+        togglePaste(k, !!text);
+        $("#paste-" + k).value = text || "";
+        renderDocStatus(k);
+      }
+    }
     state.ignored = new Set(a.ignored || []);
     state.answers = { ...(a.knockoutAnswers || {}) };
     state.editingId = a.id;
@@ -683,8 +761,12 @@
   });
 
   /* ---------- Export / import ---------- */
-  $("#btn-export").addEventListener("click", () => {
-    const blob = new Blob([ATS.store.exportJSON()], { type: "application/json" });
+  $("#btn-export").addEventListener("click", async () => {
+    const data = JSON.parse(ATS.store.exportJSON());
+    try {
+      data.files = await ATS.files.exportFiles(data.applications.flatMap((x) => [x.cvFile, x.letterFile]).filter(Boolean).map((x) => x.hash));
+    } catch (e) { data.files = {}; }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "mes-candidatures-" + new Date().toISOString().slice(0, 10) + ".json";
@@ -695,15 +777,18 @@
     const f = e.target.files[0]; e.target.value = "";
     if (!f) return;
     try {
-      const { added, updated } = ATS.store.importJSON(await f.text());
+      const text = await f.text();
+      const { added, updated } = ATS.store.importJSON(text);
+      let nFiles = 0;
+      try { const data = JSON.parse(text); if (data && data.files) nFiles = await ATS.files.importFiles(data.files); } catch (e) { nFiles = 0; }
       renderHistory();
-      toast(added + " candidature(s) ajoutée(s), " + updated + " mise(s) à jour.");
+      toast(added + " candidature(s) ajoutée(s), " + updated + " mise(s) à jour" + (nFiles ? ", " + nFiles + " fichier(s) CV / lettre restauré(s)" : "") + ".");
     } catch (err) { toast("Import impossible : " + err.message); }
   });
   function toast(msg) {
     const t = document.createElement("div");
-    t.className = "notice warn"; t.textContent = msg; t.style.cssText = "position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:50;max-width:90vw";
-    document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+    t.className = "toast"; t.setAttribute("role", "status"); t.textContent = msg;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 4500);
   }
 
   /* ---------- Réinitialiser ---------- */
@@ -731,8 +816,8 @@
   window.addEventListener("pageshow", (e) => { if (e.persisted) resetForm(false); });
   if (!ATS.store.isAvailable()) $("#storage-warning").hidden = false;
   $("#history-hint").textContent = ATS.store.cloud
-    ? "Tes candidatures sont synchronisées dans ton espace : tu les retrouves sur tous tes appareils. Tu peux aussi les exporter pour en garder une copie."
-    : "Tes candidatures sont gardées dans ton espace, sur cet appareil. Exporte-les régulièrement pour en garder une copie ou les passer sur un autre appareil.";
+    ? "Tes candidatures sont synchronisées dans ton espace : tu les retrouves sur tous tes appareils. Tu peux aussi les exporter pour en garder une copie. Les fichiers CV et lettre restent sur l'appareil où tu les as importés."
+    : "Tes candidatures sont gardées dans ton espace, sur cet appareil. Exporte-les régulièrement pour en garder une copie ou les passer sur un autre appareil : l'export inclut tes fichiers CV et lettre.";
   renderSync();
   renderClaim();
   if (location.hash === "#candidatures") showView("history", "replace");

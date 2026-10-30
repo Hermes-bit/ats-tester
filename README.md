@@ -34,6 +34,7 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 - **Espace personnel** : chacun se connecte avec son e-mail et un mot de passe et retrouve ses propres candidatures. Les candidatures enregistrées avant la création des espaces sont proposées à la récupération lors de la première connexion. Voir [Espaces personnels](#espaces-personnels).
 - **Temps de réflexion** : pendant l'analyse, une fenêtre montre les étapes une à une (lecture, mots-clés, comparaison, contrôles, recommandations) avec les vrais chiffres.
 - **Suivi des candidatures** : sauvegarde de chaque candidature (entreprise, poste, date, statut, notes, scores, fiche de poste, textes envoyés et profil lu par l'ATS), filtres par statut, archives et statistiques.
+- **CV et lettre de chaque candidature téléchargeables** : le fichier d'origine (PDF, DOCX…) est gardé dans le navigateur avec la candidature, puis retéléchargeable depuis « Mes candidatures » (boutons dans la liste et dans le détail). Un même CV utilisé pour plusieurs offres n'est gardé qu'une fois. Un texte collé se télécharge en `.txt`. Les fichiers ne sont jamais envoyés sur un serveur : en mode cloud, ils restent sur l'appareil où ils ont été importés. L'export JSON les inclut, pour passer d'un appareil à l'autre.
 - **Recherche booléenne** : `QGIS AND (Rennes OR Nantes) NOT stage`, `ET` / `OU` / `SAUF`, `-mot`, `"expression exacte"` et champs (`entreprise:`, `poste:`, `statut:`, `offre:`, `cv:`, `competences:`, `notes:`).
 - **Nouvelle offre** : un bouton vide l'offre, la lettre et les résultats en gardant ton CV, pour enchaîner les candidatures. Le formulaire s'ouvre toujours vide : rien n'est gardé d'une visite à l'autre.
 - **Export / import JSON** pour sauvegarder tes candidatures ou les transférer sur un autre ordinateur.
@@ -152,6 +153,7 @@ ats-tester/
 │   ├── js/config.js           # Mode des espaces : appareil (vide) ou cloud (Supabase)
 │   ├── js/auth.js             # Comptes et sessions (mot de passe haché ou Supabase)
 │   ├── js/storage.js          # Candidatures de chaque espace, synchronisation, export / import
+│   ├── js/files.js            # Fichiers d'origine (CV, lettre) gardés dans le navigateur (IndexedDB)
 │   ├── js/login.js            # Écran de lancement et formulaires de connexion
 │   ├── js/app.js              # Interface du testeur
 │   ├── js/fx.js               # Effets : apparitions, compteurs, démo, confettis

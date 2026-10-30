@@ -516,6 +516,26 @@ dialog::backdrop { background: rgba(4, 2, 12, .72); -webkit-backdrop-filter: blu
 .footer-notes li::before { content: "✦"; color: var(--pink); font-size: 10px; margin-right: 8px; vertical-align: 1px; }
 .footer-links { display: grid; gap: 4px; text-align: right; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
 
+/* ---------- Documents d'une candidature (téléchargement) ---------- */
+.docs-cell { white-space: nowrap; }
+.dl-btn { display: inline-flex; align-items: center; gap: 6px; margin: 2px 6px 2px 0; padding: 6px 11px; border-radius: 999px; cursor: pointer;
+  font: 700 12.5px/1 var(--sans); color: var(--text); background: var(--accent-soft); border: 1px solid var(--border-strong); transition: background .2s, transform .2s, border-color .2s; }
+.dl-ic { width: 18px; height: 18px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--grad); }
+.dl-ic svg { width: 12px; height: 12px; fill: none; stroke: #160B2E; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn-primary .dl-ic { background: rgba(22, 11, 46, .16); }
+.dl-btn small { font-size: 10.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; }
+.dl-btn:hover { background: rgba(167, 139, 250, .24); transform: translateY(-1px); }
+.dl-btn:active { transform: scale(.96); }
+.dlg-docs { display: grid; gap: 8px; }
+.dlg-doc { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .04); border: 1px solid var(--border); }
+.dlg-doc-ic { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; font-size: 19px; background: var(--accent-soft); border: 1px solid var(--border); }
+.dlg-doc b { display: block; font-size: 14px; }
+.dlg-doc small { display: block; color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.dlg-doc-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.toast { position: fixed; left: 50%; bottom: 24px; translate: -50% 0; z-index: 60; width: max-content; max-width: min(560px, calc(100vw - 32px));
+  padding: 12px 18px; border-radius: 14px; font-size: 14px; font-weight: 600; color: var(--text); background: #1A1435; border: 1px solid var(--border-strong);
+  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, .9), 0 0 30px -10px rgba(167, 139, 250, .8); animation: rise .35s cubic-bezier(.2, .8, .2, 1) both; }
+
 /* ---------- Bouton retour et retour en haut ---------- */
 .topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .back-btn { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 6px; border-radius: 999px; cursor: pointer;
@@ -917,6 +937,23 @@ main.login { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 54
   .claim .btn { width: 100%; }
   .ko { grid-template-columns: 28px 1fr; }
   .ko-ans { grid-column: 1 / -1; justify-content: flex-start; }
+  .dlg-doc { grid-template-columns: 36px 1fr; }
+  /* Mes candidatures : une carte par candidature, documents à portée de pouce */
+  .apps thead { display: none; }
+  .apps, .apps tbody { display: block; }
+  .apps tr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding: 14px; margin-bottom: 10px; border-radius: 16px; background: rgba(255, 255, 255, .035); border: 1px solid var(--border); }
+  .apps td { display: block; padding: 0; border: 0; white-space: normal; min-width: 0; }
+  .apps td.wrap-cell { min-width: 0; }
+  .apps td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .apps td.c-company, .apps td.c-title, .apps td.docs-cell, .apps td.c-open { grid-column: 1 / -1; }
+  .apps td.c-company { order: -2; font-size: 16px; }
+  .apps td.c-company::before, .apps td.c-title::before { display: none; }
+  .apps td.c-title { order: -1; margin-top: -8px; color: var(--muted); }
+  .apps td.c-status select { width: 100%; }
+  .apps td.c-open .btn { width: 100%; }
+  .apps tbody tr:hover td { background: none; }
+  .dlg-doc-ic { width: 36px; height: 36px; }
+  .dlg-doc-actions { grid-column: 1 / -1; justify-content: flex-start; }
   .kv { grid-template-columns: 1fr; gap: 0; }
   .kv dd { margin-bottom: 8px; }
 }

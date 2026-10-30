@@ -6,12 +6,12 @@
   <title>Analyser ma candidature – ATS Tester</title>
   <meta name="description" content="Compare ton CV et ta lettre de motivation à une fiche de poste, comme un logiciel de recrutement (ATS). Tout reste dans ton navigateur.">
   <meta name="theme-color" content="#07060F">
-  <link rel="icon" href="assets/img/favicon.svg?v=11" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=11">
+  <link rel="icon" href="assets/img/favicon.svg?v=12" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=12">
   <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/style.css?v=11">
-  <script src="assets/js/config.js?v=11"></script>
-  <script src="assets/js/auth.js?v=11"></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=12">
+  <script src="assets/js/config.js?v=12"></script>
+  <script src="assets/js/auth.js?v=12"></script>
   <script>ATS.auth.guard(location.hash === "#candidatures" ? "analyser.html#candidatures" : "analyser.html");</script>
 </head>
 <body class="page-app">
@@ -22,7 +22,7 @@
       <div class="topbar-left">
       <button class="back-btn" type="button" data-back="index.html" aria-label="Revenir à la page précédente" title="Revenir à la page précédente"><span class="back-ico" aria-hidden="true">←</span><span class="back-txt">Retour</span></button>
       <a class="brand" href="index.html" aria-label="ATS Tester, accueil">
-        <img class="brand-mark" src="assets/img/logo.svg?v=11" width="42" height="42" alt="">
+        <img class="brand-mark" src="assets/img/logo.svg?v=12" width="42" height="42" alt="">
         <div>
           <div class="brand-name">ATS Tester</div>
           <div class="brand-tag">Le messager de ta candidature</div>
@@ -348,7 +348,7 @@
         <p class="hint search-help" id="search-help">Recherche avancée : <code>ET</code> / <code>AND</code>, <code>OU</code> / <code>OR</code>, <code>SAUF</code> / <code>NOT</code> (ou <code>-mot</code>), parenthèses, <code>"expression exacte"</code> et champs <code>entreprise:</code> <code>poste:</code> <code>statut:</code> <code>offre:</code> <code>cv:</code> <code>competences:</code> <code>notes:</code>.</p>
         <div class="table-wrap">
           <table class="apps" id="apps">
-            <thead><tr><th>Date</th><th>Entreprise</th><th>Poste</th><th>Statut</th><th>CV</th><th>Lettre</th><th></th></tr></thead>
+            <thead><tr><th>Date</th><th>Entreprise</th><th>Poste</th><th>Statut</th><th>CV</th><th>Lettre</th><th>Documents</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -395,7 +395,7 @@
     <div class="think-card">
       <div class="think-visual" aria-hidden="true">
         <div class="think-doc"><i></i><i></i><i></i><i></i><i></i><i></i><span class="think-scan"></span></div>
-        <img class="think-logo" src="assets/img/logo.svg?v=11" alt="">
+        <img class="think-logo" src="assets/img/logo.svg?v=12" alt="">
       </div>
       <h2 id="think-title"><span id="think-label">Analyse en cours</span><span class="dots" aria-hidden="true"></span></h2>
       <p class="muted" id="think-sub">Le messager lit ta candidature comme un recruteur pressé.</p>
@@ -407,7 +407,7 @@
   <footer class="footer">
     <div class="wrap footer-inner">
       <div class="footer-brand">
-        <img src="assets/img/logo.svg?v=11" width="36" height="36" alt="">
+        <img src="assets/img/logo.svg?v=12" width="36" height="36" alt="">
         <div>
           <div class="footer-name">ATS Tester</div>
           <div class="footer-tag">Le messager de ta candidature</div>
@@ -428,15 +428,16 @@
 
   <script src="assets/vendor/pdf.min.js"></script>
   <script src="assets/vendor/mammoth.browser.min.js"></script>
-  <script src="assets/js/keywords.js?v=11"></script>
-  <script src="assets/js/extract.js?v=11"></script>
-  <script src="assets/js/analyzer.js?v=11"></script>
-  <script src="assets/js/profile.js?v=11"></script>
-  <script src="assets/js/offer.js?v=11"></script>
-  <script src="assets/js/search.js?v=11"></script>
-  <script src="assets/js/prompt.js?v=11"></script>
-  <script src="assets/js/storage.js?v=11"></script>
-  <script src="assets/js/fx.js?v=11"></script>
-  <script src="assets/js/app.js?v=11"></script>
+  <script src="assets/js/keywords.js?v=12"></script>
+  <script src="assets/js/extract.js?v=12"></script>
+  <script src="assets/js/analyzer.js?v=12"></script>
+  <script src="assets/js/profile.js?v=12"></script>
+  <script src="assets/js/offer.js?v=12"></script>
+  <script src="assets/js/search.js?v=12"></script>
+  <script src="assets/js/prompt.js?v=12"></script>
+  <script src="assets/js/storage.js?v=12"></script>
+  <script src="assets/js/files.js?v=12"></script>
+  <script src="assets/js/fx.js?v=12"></script>
+  <script src="assets/js/app.js?v=12"></script>
 </body>
 </html>
