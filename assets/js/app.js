@@ -239,7 +239,7 @@
     setRing($("#ring-cv"), r.cv ? r.cv.score : null);
     setRing($("#ring-letter"), r.letter ? r.letter.score : null);
     const v = ATS.verdictFor(r);
-    const vEl = $("#verdict"); vEl.textContent = v.label + " " + (v.disqualified ? "⛔" : { good: "🚀", mid: "💪", bad: "🛠️" }[v.tone] || ""); vEl.className = "verdict " + v.tone;
+    const vEl = $("#verdict"); vEl.textContent = v.label + "\u00A0" + (v.disqualified ? "⛔" : { good: "🚀", mid: "💪", bad: "🛠️" }[v.tone] || ""); vEl.className = "verdict " + v.tone;
     $("#results").classList.toggle("is-disqualified", !!v.disqualified);
     const nSkills = r.keywords.skills.length + r.keywords.others.length;
     const cvFound = r.cv ? r.cv.coverage.filter((c) => c.found).length : 0;

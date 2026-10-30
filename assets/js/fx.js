@@ -154,6 +154,18 @@ window.ATS = window.ATS || {};
   onScroll();
   document.querySelectorAll("[data-to-top]").forEach((b) => b.addEventListener("click", goTop));
 
+  /* ---------- Animations en pause quand on ne les voit pas ----------
+   * Les effets en boucle (titres scintillants, bordures tournantes, halos…) s'arrêtent hors de l'écran
+   * et quand l'onglet est caché : moins de travail pour le processeur et la carte graphique.
+   */
+  if (!reduce && "IntersectionObserver" in window) {
+    const anim = new IntersectionObserver((entries) => entries.forEach((e) => e.target.classList.toggle("anim-off", !e.isIntersecting)), { rootMargin: "120px 0px" });
+    document.querySelectorAll(".shimmer, .btn-neon, .wave, .hero-visual, .marquee, .final-cta, .login-card, .login-mock, .empty, .feature").forEach((el) => anim.observe(el));
+  }
+  const syncHidden = () => document.documentElement.classList.toggle("page-hidden", document.hidden);
+  document.addEventListener("visibilitychange", syncHidden);
+  syncHidden();
+
   const year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();
 })();

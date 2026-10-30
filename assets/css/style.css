@@ -17,7 +17,7 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --bg: #07060F;
-  --glass: linear-gradient(180deg, rgba(30, 26, 58, .62), rgba(13, 11, 28, .72));
+  --glass: linear-gradient(180deg, rgba(30, 26, 58, .8), rgba(13, 11, 28, .88));
   --surface-2: rgba(255, 255, 255, .04);
   --input-bg: rgba(5, 4, 14, .55);
   --text: #F1EEFF;
@@ -64,11 +64,12 @@ em { font-style: normal; color: var(--muted); font-weight: 400; }
 /* Aurore animée en fond */
 .bg-fx { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .bg-fx::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255, 255, 255, .07) 1px, transparent 1px); background-size: 26px 26px; -webkit-mask: radial-gradient(80% 60% at 50% 0%, #000, transparent 80%); mask: radial-gradient(80% 60% at 50% 0%, #000, transparent 80%); }
-.bg-fx span { position: absolute; width: 46vmax; height: 46vmax; border-radius: 50%; filter: blur(70px); opacity: .32; animation: drift 26s ease-in-out infinite alternate; }
-.bg-fx span:nth-child(1) { background: #22D3EE; left: -12vmax; top: -16vmax; }
-.bg-fx span:nth-child(2) { background: #8B5CF6; right: -14vmax; top: -10vmax; animation-delay: -7s; opacity: .36; }
-.bg-fx span:nth-child(3) { background: #EC4899; right: 10vmax; top: 40vh; animation-delay: -13s; opacity: .2; }
-.bg-fx span:nth-child(4) { background: #84CC16; left: 8vmax; top: 75vh; animation-delay: -19s; opacity: .14; }
+/* Halos en dégradé radial (sans filtre de flou : un flou de 70 px sur de grands calques animés saturait la carte graphique) */
+.bg-fx span { --c: #22D3EE; position: absolute; width: 56vmax; height: 56vmax; border-radius: 50%; opacity: .5; background: radial-gradient(closest-side, var(--c), transparent); animation: drift 40s ease-in-out infinite alternate; will-change: transform; }
+.bg-fx span:nth-child(1) { left: -18vmax; top: -22vmax; }
+.bg-fx span:nth-child(2) { --c: #8B5CF6; right: -20vmax; top: -16vmax; animation-delay: -10s; opacity: .56; }
+.bg-fx span:nth-child(3) { --c: #EC4899; right: 6vmax; top: 34vh; animation-delay: -20s; opacity: .32; }
+.bg-fx span:nth-child(4) { --c: #84CC16; left: 2vmax; top: 70vh; animation-delay: -30s; opacity: .22; }
 @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(6vmax, 4vmax) scale(1.12); } 100% { transform: translate(-4vmax, 8vmax) scale(.92); } }
 
 /* Texte en dégradé scintillant */
@@ -88,7 +89,7 @@ em { font-style: normal; color: var(--muted); font-weight: 400; }
 .workflow .reveal:nth-child(5) { transition-delay: .4s; }
 
 /* ---------- Barre du haut ---------- */
-.topbar { position: sticky; top: 0; z-index: 30; background: rgba(7, 6, 15, .62); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); border-bottom: 1px solid rgba(255, 255, 255, .07); }
+.topbar { position: sticky; top: 0; z-index: 30; background: rgba(7, 6, 15, .78); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, .07); }
 .topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 12px; padding-bottom: 12px; }
 .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
 .brand-mark { display: block; width: 42px; height: 42px; filter: drop-shadow(0 0 12px rgba(167, 139, 250, .55)); transition: transform .5s cubic-bezier(.3, 1.6, .5, 1); }
@@ -170,7 +171,7 @@ main.wrap { padding-bottom: 72px; }
 .sparkle.s3 { left: 40%; top: 0; font-size: 22px; animation-delay: -1.8s; }
 @keyframes twinkle { 0%, 100% { transform: scale(.6) rotate(0); opacity: .4; } 50% { transform: scale(1.2) rotate(45deg); opacity: 1; } }
 .float-chip { position: absolute; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; border-radius: 16px;
-  background: rgba(18, 14, 38, .66); border: 1px solid var(--border); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  background: rgba(18, 14, 38, .9); border: 1px solid var(--border);
   box-shadow: 0 18px 40px -20px rgba(0, 0, 0, .9), 0 0 24px -10px rgba(167, 139, 250, .8); font-size: 13px; animation: bob 6s ease-in-out infinite; }
 .float-chip b { display: block; font-weight: 700; }
 .float-chip small { display: block; color: var(--muted); font-size: 11.5px; }
@@ -303,7 +304,7 @@ main.wrap { padding-bottom: 72px; }
 .steps-pills span { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; font-size: 11px; font-weight: 800; color: #160B2E; background: var(--grad); }
 
 /* ---------- Cartes de l'outil ---------- */
-.card { position: relative; background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 20px; min-width: 0; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.card { position: relative; background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 20px; min-width: 0; }
 .card-title { margin-bottom: 18px; }
 .card-title-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
 .card-title-row .card-title { margin-bottom: 0; }
@@ -386,7 +387,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--v
 .summary { overflow: hidden; display: flex; justify-content: space-between; gap: 28px; align-items: center; flex-wrap: wrap; padding: 28px;
   background: radial-gradient(120% 160% at 0% 0%, rgba(34, 211, 238, .22), transparent 55%), radial-gradient(100% 140% at 100% 100%, rgba(236, 72, 153, .22), transparent 60%), var(--glass);
   border-color: var(--border-strong); box-shadow: var(--shadow), 0 0 60px -26px rgba(167, 139, 250, .9); }
-.summary::after { content: ""; position: absolute; right: -60px; top: 50%; width: 300px; height: 300px; margin-top: -150px; background: url("../img/logo.svg") center / contain no-repeat; opacity: .1; pointer-events: none; animation: spin 40s linear infinite; }
+.summary::after { content: ""; position: absolute; right: -60px; top: 50%; width: 300px; height: 300px; margin-top: -150px; background: url("../img/logo.svg") center / contain no-repeat; opacity: .1; pointer-events: none; }
 .summary > * { position: relative; z-index: 1; }
 .summary-main { display: flex; gap: 24px; align-items: center; min-width: 0; flex: 1 1 380px; }
 .summary-side { display: flex; gap: 14px; flex-wrap: wrap; }
@@ -516,6 +517,10 @@ dialog::backdrop { background: rgba(4, 2, 12, .72); -webkit-backdrop-filter: blu
 .footer-notes li::before { content: "✦"; color: var(--pink); font-size: 10px; margin-right: 8px; vertical-align: 1px; }
 .footer-links { display: grid; gap: 4px; text-align: right; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
 
+/* Animations décoratives en pause hors de l'écran ou quand l'onglet est caché */
+.anim-off, .anim-off::before, .anim-off::after, .anim-off *, .anim-off *::before, .anim-off *::after,
+html.page-hidden *, html.page-hidden *::before, html.page-hidden *::after { animation-play-state: paused !important; }
+
 /* ---------- Documents d'une candidature (téléchargement) ---------- */
 .docs-cell { white-space: nowrap; }
 .dl-btn { display: inline-flex; align-items: center; gap: 6px; margin: 2px 6px 2px 0; padding: 6px 11px; border-radius: 999px; cursor: pointer;
@@ -548,7 +553,7 @@ dialog::backdrop { background: rgba(4, 2, 12, .72); -webkit-backdrop-filter: blu
 .back-btn:active { transform: scale(.96); }
 
 .to-top { --p: 0; position: fixed; right: 20px; bottom: 20px; z-index: 40; width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
-  display: grid; place-items: center; color: #fff; background: rgba(18, 14, 38, .82); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  display: grid; place-items: center; color: #fff; background: rgba(18, 14, 38, .94);
   box-shadow: 0 12px 30px -10px rgba(0, 0, 0, .8), 0 0 28px -8px rgba(167, 139, 250, .9);
   opacity: 0; transform: translateY(20px) scale(.8); pointer-events: none; transition: opacity .3s, transform .35s cubic-bezier(.3, 1.6, .5, 1); }
 .to-top.is-on { opacity: 1; transform: none; pointer-events: auto; }
