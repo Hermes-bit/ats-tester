@@ -107,6 +107,53 @@ window.ATS = window.ATS || {};
     login.title = me.email;
   }
 
+  /* ---------- Bouton « Retour » ----------
+   * Revient à la page précédente du site. Arrivé directement (favori, lien externe) : page de repli (data-back).
+   * Une page peut d'abord gérer le retour elle-même (ATS.onBack, ex. Mes candidatures → Analyser).
+   */
+  const ref = (() => { try { return document.referrer ? new URL(document.referrer) : null; } catch (e) { return null; } })();
+  const fromSite = !!ref && ref.origin === location.origin && ref.pathname !== location.pathname && history.length > 1;
+  document.querySelectorAll("[data-back]").forEach((b) => {
+    if (b.hasAttribute("data-back-optional")) b.hidden = !fromSite; // accueil : seulement si on vient d'une autre page du site
+    b.addEventListener("click", () => {
+      if (typeof ATS.onBack === "function" && ATS.onBack()) return;
+      if (fromSite) history.back();
+      else location.href = b.dataset.back || "index.html";
+    });
+  });
+
+  /* ---------- Remonter en haut de page ----------
+   * Bouton flottant en bas à droite (avec la progression de lecture), et lien « Haut de page » dans le pied de page.
+   */
+  function goTop() {
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+    const first = document.querySelector(".topbar .back-btn:not([hidden]), .topbar .brand");
+    if (first) first.focus({ preventScroll: true });
+  }
+  const toTop = document.createElement("button");
+  toTop.type = "button";
+  toTop.className = "to-top";
+  toTop.setAttribute("aria-label", "Remonter en haut de la page");
+  toTop.title = "Haut de page";
+  toTop.innerHTML = '<svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="tt-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22D3EE"/><stop offset=".5" stop-color="#A78BFA"/><stop offset="1" stop-color="#F472B6"/></linearGradient></defs><circle class="tt-track" cx="20" cy="20" r="17"/><circle class="tt-prog" cx="20" cy="20" r="17" pathLength="100"/></svg><span aria-hidden="true">↑</span>';
+  toTop.addEventListener("click", goTop);
+  document.body.appendChild(toTop);
+  // Le pied de page a son propre lien « Haut de page » : le bouton flottant s'efface pour ne pas le recouvrir
+  let footerVisible = false;
+  const footer = document.querySelector(".footer");
+  if (footer && "IntersectionObserver" in window) {
+    new IntersectionObserver((entries) => { footerVisible = entries[0].isIntersecting; onScroll(); }).observe(footer);
+  }
+  function onScroll() {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    toTop.classList.toggle("is-on", scrollY > 400 && !footerVisible);
+    toTop.style.setProperty("--p", max > 0 ? Math.min(100, Math.round((scrollY / max) * 100)) : 0);
+  }
+  addEventListener("scroll", onScroll, { passive: true });
+  addEventListener("resize", onScroll);
+  onScroll();
+  document.querySelectorAll("[data-to-top]").forEach((b) => b.addEventListener("click", goTop));
+
   const year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();
 })();

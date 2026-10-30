@@ -516,6 +516,31 @@ dialog::backdrop { background: rgba(4, 2, 12, .72); -webkit-backdrop-filter: blu
 .footer-notes li::before { content: "✦"; color: var(--pink); font-size: 10px; margin-right: 8px; vertical-align: 1px; }
 .footer-links { display: grid; gap: 4px; text-align: right; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
 
+/* ---------- Bouton retour et retour en haut ---------- */
+.topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.back-btn { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 6px; border-radius: 999px; cursor: pointer;
+  font: 700 12px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--text);
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .14); transition: border-color .2s, background .2s, transform .2s; }
+.back-btn[hidden] { display: none; }
+.back-ico { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; font-size: 15px; letter-spacing: 0; color: #160B2E; background: var(--grad); transition: transform .3s cubic-bezier(.3, 1.6, .5, 1); }
+.back-btn:hover { border-color: var(--border-strong); background: var(--accent-soft); }
+.back-btn:hover .back-ico { transform: translateX(-3px); }
+.back-btn:active { transform: scale(.96); }
+
+.to-top { --p: 0; position: fixed; right: 20px; bottom: 20px; z-index: 40; width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  display: grid; place-items: center; color: #fff; background: rgba(18, 14, 38, .82); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, .8), 0 0 28px -8px rgba(167, 139, 250, .9);
+  opacity: 0; transform: translateY(20px) scale(.8); pointer-events: none; transition: opacity .3s, transform .35s cubic-bezier(.3, 1.6, .5, 1); }
+.to-top.is-on { opacity: 1; transform: none; pointer-events: auto; }
+.to-top:hover { transform: translateY(-3px) scale(1.06); }
+.to-top svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.to-top circle { fill: none; stroke-width: 3; }
+.tt-track { stroke: rgba(255, 255, 255, .12); }
+.tt-prog { stroke: url(#tt-grad); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--p)); transition: stroke-dashoffset .15s linear; }
+.to-top span { position: relative; font: 800 20px/1 var(--sans); }
+.to-top-link { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+.to-top-link:hover { color: #fff; }
+
 /* ---------- Questions éliminatoires ---------- */
 .ko-card { border-color: var(--border-strong); }
 .ko-banner { padding: 12px 16px; border-radius: 14px; margin-bottom: 14px; font-size: 14px; border: 1px solid var(--border); }
@@ -874,6 +899,11 @@ main.login { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 54
   .actions .btn-large { width: 100%; }
   .next-offer .btn { width: 100%; }
   .user-chip { margin-left: 2px; gap: 4px; }
+  .topbar-left { gap: 8px; }
+  .back-btn { width: 38px; height: 38px; padding: 0; justify-content: center; }
+  .back-ico { width: 30px; height: 30px; }
+  .back-txt { display: none; }
+  .to-top { right: 14px; bottom: 14px; width: 48px; height: 48px; }
   .page-app .brand > div { display: none; }
   .tab-long { display: none; }
   .nav-login-text { display: none; }
@@ -889,6 +919,10 @@ main.login { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 54
   .ko-ans { grid-column: 1 / -1; justify-content: flex-start; }
   .kv { grid-template-columns: 1fr; gap: 0; }
   .kv dd { margin-bottom: 8px; }
+}
+@media (max-width: 480px) {
+  .page-app .brand { display: none; }
+  .page-home .back-btn:not([hidden]) + .brand .brand-name { display: none; }
 }
 @media (max-width: 400px) {
   .page-app .user-chip .avatar { display: none; }

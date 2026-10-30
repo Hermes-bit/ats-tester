@@ -17,15 +17,32 @@
   };
 
   /* ---------- Onglets ---------- */
-  function showView(v) {
+  // « Mes candidatures » est une sous-vue de l'analyseur : une seule entrée d'historique (#candidatures),
+  // que le bouton retour du navigateur ou de la page referme.
+  // mode : clic (par défaut), "replace" (démarrage) ou "pop" (retour / avance du navigateur)
+  function showView(v, mode) {
+    const current = $("#view-history").hidden ? "analyze" : "history";
+    if (mode === "pop" && v === current) return;
     $$(".tab").forEach((t) => { const on = t.dataset.view === v; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", on); });
     $("#view-analyze").hidden = v !== "analyze";
     $("#view-history").hidden = v !== "history";
     if (v === "history") renderHistory();
-    history.replaceState(null, "", v === "history" ? "#candidatures" : location.pathname);
+    if (mode === "replace") history.replaceState(null, "", v === "history" ? "#candidatures" : location.pathname);
+    else if (mode !== "pop" && v !== current) {
+      if (v === "history") history.pushState({ view: "history" }, "", "#candidatures");
+      else if (history.state && history.state.view === "history") history.back(); // l'adresse suit ; la vue est déjà affichée
+      else history.replaceState(null, "", location.pathname);
+    }
     window.scrollTo({ top: 0 });
   }
   $$(".tab").forEach((t) => t.addEventListener("click", () => showView(t.dataset.view)));
+  window.addEventListener("popstate", () => showView(location.hash === "#candidatures" ? "history" : "analyze", "pop"));
+  // Bouton « Retour » de la barre du haut : depuis Mes candidatures, revient d'abord à l'analyseur
+  ATS.onBack = () => {
+    if ($("#view-history").hidden) return false;
+    showView("analyze");
+    return true;
+  };
   // Liens de la page (accroche, méthode, analyseur) : reviennent sur la vue Analyser si besoin
   $$("[data-goto]").forEach((a) => a.addEventListener("click", (e) => {
     e.preventDefault();
@@ -718,7 +735,7 @@
     : "Tes candidatures sont gardées dans ton espace, sur cet appareil. Exporte-les régulièrement pour en garder une copie ou les passer sur un autre appareil.";
   renderSync();
   renderClaim();
-  if (location.hash === "#candidatures") showView("history");
+  if (location.hash === "#candidatures") showView("history", "replace");
   $("#year").textContent = new Date().getFullYear();
   updateCount();
   if (ATS.store.cloud) ATS.store.sync();

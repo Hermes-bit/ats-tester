@@ -38,7 +38,7 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 - **Nouvelle offre** : un bouton vide l'offre, la lettre et les résultats en gardant ton CV, pour enchaîner les candidatures. Le formulaire s'ouvre toujours vide : rien n'est gardé d'une visite à l'autre.
 - **Export / import JSON** pour sauvegarder tes candidatures ou les transférer sur un autre ordinateur.
 - **Confidentialité** : l'analyse se fait **dans le navigateur**. Aucun fichier n'est envoyé sur un serveur. En mode cloud, seules les candidatures que tu enregistres (avec le texte de l'offre et de tes documents) sont synchronisées dans ton espace.
-- Interface responsive (ordinateur et mobile), avec un mode sombre automatique.
+- Interface responsive (ordinateur et mobile), avec un bouton « Retour » sur chaque page (Mes candidatures revient d'abord à l'analyseur) et un bouton pour remonter en haut de page, en bas à droite et dans le pied de page.
 
 ## Identité visuelle
 
