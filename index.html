@@ -11,12 +11,12 @@
   <meta property="og:description" content="Teste ton CV et ta lettre de motivation face à une fiche de poste, comme un logiciel de recrutement (ATS). Gratuit, et tes fichiers restent dans ton navigateur.">
   <meta property="og:image" content="https://hermes-bit.github.io/ats-tester/assets/img/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="assets/img/favicon.svg?v=16" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=16">
+  <link rel="icon" href="assets/img/favicon.svg?v=17" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=17">
   <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/vendor/fonts/cormorant-garamond-latin-600.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/img/hermes-barry.webp" as="image" type="image/webp">
-  <link rel="stylesheet" href="assets/css/style.css?v=16">
+  <link rel="preload" as="image" type="image/webp" href="assets/img/ats-rejete-1600.webp" imagesrcset="assets/img/ats-rejete-900.webp 900w, assets/img/ats-rejete-1600.webp 1600w" imagesizes="(max-width: 900px) 100vw, 55vw">
+  <link rel="stylesheet" href="assets/css/style.css?v=17">
 </head>
 <body class="page-home">
   <div class="bg-fx" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
@@ -26,7 +26,7 @@
       <div class="topbar-left">
       <button class="back-btn" type="button" data-back="" data-back-optional hidden aria-label="Revenir à la page précédente" title="Revenir à la page précédente"><span class="back-ico" aria-hidden="true">←</span><span class="back-txt">Retour</span></button>
       <a class="brand" href="#top" aria-label="ATS Tester, retour en haut">
-        <img class="brand-mark" src="assets/img/logo.svg?v=16" width="42" height="42" alt="">
+        <img class="brand-mark" src="assets/img/logo.svg?v=17" width="42" height="42" alt="">
         <div>
           <div class="brand-name">ATS Tester</div>
           <div class="brand-tag">Le messager de ta candidature</div>
@@ -62,8 +62,10 @@
       </div>
 
       <div class="hero-visual reveal">
-        <div class="halo" aria-hidden="true"><span></span><span></span><span></span></div>
-        <img class="portrait" src="assets/img/hermes-barry.webp" width="900" height="675" alt="Portrait d'Hermès BARRY, créateur d'ATS Tester">
+        <figure class="scene-frame">
+          <img class="scene-img" src="assets/img/ats-rejete-1600.webp" srcset="assets/img/ats-rejete-900.webp 900w, assets/img/ats-rejete-1600.webp 1600w" sizes="(max-width: 900px) 100vw, 55vw" width="1600" height="893" fetchpriority="high"
+            alt="Illustration : un candidat découragé devant son ordinateur imagine le logiciel ATS qui trie les CV comme un entonnoir et rejette le sien avant qu'il n'arrive au recruteur.">
+        </figure>
         <svg class="sticker" viewBox="0 0 120 120" aria-hidden="true">
           <defs><path id="sticker-circle" d="M60 60 m-46 0 a46 46 0 1 1 92 0 a46 46 0 1 1 -92 0"/></defs>
           <circle cx="60" cy="60" r="58"/>
@@ -79,7 +81,6 @@
         </div>
         <div class="float-chip chip-ai" aria-hidden="true"><span class="chip-ico">✨</span><div><b>Prompt IA prêt</b><small>ChatGPT, Claude, Gemini…</small></div></div>
         <div class="float-chip chip-lock" aria-hidden="true"><span class="chip-ico">🔒</span><div><b>Fichiers privés</b><small>Lus dans ton navigateur</small></div></div>
-        <div class="signature"><b>Hermès BARRY</b><span>Créateur d'ATS Tester</span></div>
       </div>
     </section>
 
@@ -220,7 +221,7 @@
 
     <!-- Créateur -->
     <section class="block creator reveal" id="createur">
-      <img class="creator-photo" src="assets/img/hermes-barry.webp" width="900" height="675" alt="">
+      <img class="creator-photo" src="assets/img/hermes-barry.webp" width="900" height="675" alt="" loading="lazy" decoding="async">
       <div class="creator-text">
         <div class="kicker">Le créateur</div>
         <h2 class="block-title">Hermès BARRY</h2>
@@ -235,17 +236,25 @@
     <!-- Appel final -->
     <section class="block final-cta reveal">
       <span class="sparkle s4" aria-hidden="true">✦</span><span class="sparkle s5" aria-hidden="true">✧</span>
-      <div class="kicker">C'est parti</div>
-      <h2 class="block-title">Prêt à passer<br><span class="grad-text shimmer">le filtre ?</span></h2>
-      <p class="muted">Dix minutes, un espace gratuit, et ta candidature arrive enfin jusqu'au recruteur.</p>
-      <a class="btn btn-neon btn-large" href="connexion.html">Tester mon CV maintenant <span class="arrow" aria-hidden="true">↗</span></a>
+      <div class="final-grid">
+        <figure class="scene-frame scene-frame-alt">
+          <img class="scene-img" src="assets/img/ats-valide-1600.webp" srcset="assets/img/ats-valide-900.webp 900w, assets/img/ats-valide-1600.webp 1600w" sizes="(max-width: 900px) 100vw, 50vw" width="1600" height="893" loading="lazy" decoding="async"
+            alt="Illustration : une amie montre ATS Tester au candidat sur sa tablette ; son CV obtient un bon score, il est validé et passe le filtre jusqu'au recruteur.">
+        </figure>
+        <div class="final-text">
+          <div class="kicker">C'est parti</div>
+          <h2 class="block-title">Prêt à passer<br><span class="grad-text shimmer">le filtre ?</span></h2>
+          <p class="muted">Dix minutes, un espace gratuit, et ta candidature arrive enfin jusqu'au recruteur.</p>
+          <a class="btn btn-neon btn-large" href="connexion.html">Tester mon CV maintenant <span class="arrow" aria-hidden="true">↗</span></a>
+        </div>
+      </div>
     </section>
   </main>
 
   <footer class="footer">
     <div class="wrap footer-inner">
       <div class="footer-brand">
-        <img src="assets/img/logo.svg?v=16" width="36" height="36" alt="">
+        <img src="assets/img/logo.svg?v=17" width="36" height="36" alt="">
         <div>
           <div class="footer-name">ATS Tester</div>
           <div class="footer-tag">Le messager de ta candidature</div>
@@ -262,8 +271,8 @@
     </div>
   </footer>
 
-  <script src="assets/js/config.js?v=16"></script>
-  <script src="assets/js/auth.js?v=16"></script>
-  <script src="assets/js/fx.js?v=16"></script>
+  <script src="assets/js/config.js?v=17"></script>
+  <script src="assets/js/auth.js?v=17"></script>
+  <script src="assets/js/fx.js?v=17"></script>
 </body>
 </html>

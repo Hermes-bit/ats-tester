@@ -45,7 +45,7 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 
 Le site compte trois pages :
 
-- **`index.html`** : la page publicitaire de l'outil, présentée par son créateur (accroche avec portrait, fonctionnalités, démo avant / après, chiffres, méthode, créateur).
+- **`index.html`** : la page publicitaire de l'outil, présentée par son créateur. Elle raconte une histoire en deux illustrations : en accroche, le candidat dont le CV est rejeté par l'ATS ; dans l'appel final, ATS Tester qui le fait passer. Entre les deux : fonctionnalités, démo avant / après, chiffres, méthode, créateur.
 - **`connexion.html`** : l'écran de lancement (logo animé, chargement jusqu'à 100 %), puis la connexion ou la création d'un espace.
 ![Page de connexion](docs/apercu-connexion.png)
 
@@ -157,7 +157,7 @@ ats-tester/
 │   ├── js/login.js            # Écran de lancement et formulaires de connexion
 │   ├── js/app.js              # Interface du testeur
 │   ├── js/fx.js               # Effets : apparitions, compteurs, démo, confettis
-│   ├── img/                   # Logo, favicon, portrait, icône iPhone, image de partage
+│   ├── img/                   # Logo, favicon, illustrations (WebP, 900 et 1600 px), portrait, icône iPhone, image de partage
 │   └── vendor/                # pdf.js 3.11.174, mammoth 1.8.0 et polices (inclus, sans CDN)
 ├── supabase/schema.sql        # Table, règles d'accès, vues du schéma ATS et index plein texte
 ├── tests/                     # Tests unitaires Jest (+ PGlite pour le SQL)
