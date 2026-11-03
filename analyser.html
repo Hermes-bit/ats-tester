@@ -6,12 +6,12 @@
   <title>Analyser ma candidature – ATS Tester</title>
   <meta name="description" content="Compare ton CV et ta lettre de motivation à une fiche de poste, comme un logiciel de recrutement (ATS). Tout reste dans ton navigateur.">
   <meta name="theme-color" content="#07060F">
-  <link rel="icon" href="assets/img/favicon.svg?v=20" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=20">
+  <link rel="icon" href="assets/img/favicon.svg?v=21" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png?v=21">
   <link rel="preload" href="assets/vendor/fonts/inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/style.css?v=20">
-  <script src="assets/js/config.js?v=20"></script>
-  <script src="assets/js/auth.js?v=20"></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=21">
+  <script src="assets/js/config.js?v=21"></script>
+  <script src="assets/js/auth.js?v=21"></script>
   <script>ATS.auth.guard(location.hash === "#candidatures" ? "analyser.html#candidatures" : "analyser.html");</script>
 </head>
 <body class="page-app">
@@ -22,7 +22,7 @@
       <div class="topbar-left">
       <button class="back-btn" type="button" data-back="index.html" aria-label="Revenir à la page précédente" title="Revenir à la page précédente"><span class="back-ico" aria-hidden="true">←</span><span class="back-txt">Retour</span></button>
       <a class="brand" href="index.html" aria-label="ATS Tester, accueil">
-        <img class="brand-mark" src="assets/img/logo.svg?v=20" width="42" height="42" alt="">
+        <img class="brand-mark" src="assets/img/logo.svg?v=21" width="42" height="42" alt="">
         <div>
           <div class="brand-name">ATS Tester</div>
           <div class="brand-tag">Le messager de ta candidature</div>
@@ -54,6 +54,7 @@
           <li><span>2</span>Tes documents</li>
           <li><span>3</span>L'analyse</li>
           <li><span>4</span>Ton IA</li>
+          <li><span>5</span>Postuler</li>
         </ol>
       </div>
 
@@ -201,7 +202,10 @@
         <article class="card">
           <div class="card-title-row">
             <h2 class="card-title">Recommandations</h2>
-            <button class="link" id="go-ai">Corriger avec mon IA ↓</button>
+            <span class="title-links">
+              <button class="link" id="go-ai">Corriger avec mon IA ↓</button>
+              <button class="link" id="go-mail">Écrire le mail de candidature ↓</button>
+            </span>
           </div>
           <ul class="recos" id="recos"></ul>
         </article>
@@ -294,6 +298,49 @@
           <p class="ok-msg ai-msg" id="ai-msg" role="status"></p>
           <ol class="ai-steps" id="ai-steps"></ol>
           <p class="hint">Le prompt contient le texte de tes documents : relis-le avant de le partager.</p>
+        </article>
+
+        <article class="card mail-card" id="mail-card">
+          <div class="card-title-row">
+            <h2 class="card-title">Postuler par e-mail</h2>
+            <span class="muted small" id="mail-size"></span>
+          </div>
+          <p class="muted small">Un mail prêt à envoyer, écrit à partir de l'offre et de ton CV : ton vrai parcours, les outils demandés que tu utilises, ta disponibilité et tes coordonnées. Rien n'est inventé. Relis-le, ajoute une touche perso si tu veux, puis envoie-le avec tes documents en pièce jointe.</p>
+          <div class="mail-options">
+            <label class="field">
+              <span>Ton</span>
+              <select id="mail-tone">
+                <option value="classic">Classique</option>
+                <option value="direct">Direct et chaleureux</option>
+              </select>
+            </label>
+            <button id="btn-mail-other" class="btn btn-ghost btn-small" type="button">↻ Autre formulation</button>
+          </div>
+          <div class="fields">
+            <label class="field field-wide">
+              <span>Destinataire</span>
+              <input id="mail-to" type="email" autocomplete="off" placeholder="Adresse du recruteur (trouvée dans l'offre, sinon à compléter)">
+            </label>
+            <label class="field field-wide">
+              <span>Objet</span>
+              <input id="mail-subject" type="text" autocomplete="off">
+            </label>
+            <label class="field field-wide">
+              <span>Message</span>
+              <textarea id="mail-body" class="mail-body" rows="18"></textarea>
+            </label>
+          </div>
+          <ul class="mail-notes" id="mail-notes"></ul>
+          <p class="mail-attach" id="mail-attach"></p>
+          <div class="actions actions-tight">
+            <button id="btn-mail-open" class="btn btn-primary" type="button">Ouvrir dans ma messagerie</button>
+            <button id="btn-mail-copy" class="btn btn-ghost" type="button">Copier le message</button>
+            <span class="ai-links">Ou dans :
+              <a href="https://mail.google.com/" target="_blank" rel="noopener" data-webmail="gmail">Gmail</a>
+              <a href="https://outlook.live.com/" target="_blank" rel="noopener" data-webmail="outlook">Outlook</a>
+            </span>
+          </div>
+          <p class="ok-msg ai-msg" id="mail-msg" role="status"></p>
         </article>
 
         <article class="card save-card">
@@ -399,7 +446,7 @@
     <div class="think-card">
       <div class="think-visual" aria-hidden="true">
         <div class="think-doc"><i></i><i></i><i></i><i></i><i></i><i></i><span class="think-scan"></span></div>
-        <img class="think-logo" src="assets/img/logo.svg?v=20" alt="">
+        <img class="think-logo" src="assets/img/logo.svg?v=21" alt="">
       </div>
       <h2 id="think-title"><span id="think-label">Analyse en cours</span><span class="dots" aria-hidden="true"></span></h2>
       <p class="muted" id="think-sub">Le messager lit ta candidature comme un recruteur pressé.</p>
@@ -411,7 +458,7 @@
   <footer class="footer">
     <div class="wrap footer-inner">
       <div class="footer-brand">
-        <img src="assets/img/logo.svg?v=20" width="36" height="36" alt="">
+        <img src="assets/img/logo.svg?v=21" width="36" height="36" alt="">
         <div>
           <div class="footer-name">ATS Tester</div>
           <div class="footer-tag">Le messager de ta candidature</div>
@@ -432,18 +479,19 @@
 
   <script src="assets/vendor/pdf.min.js"></script>
   <script src="assets/vendor/mammoth.browser.min.js"></script>
-  <script src="assets/js/keywords.js?v=20"></script>
-  <script src="assets/js/extract.js?v=20"></script>
-  <script src="assets/js/ocr.js?v=20"></script>
-  <script src="assets/js/layout.js?v=20"></script>
-  <script src="assets/js/analyzer.js?v=20"></script>
-  <script src="assets/js/profile.js?v=20"></script>
-  <script src="assets/js/offer.js?v=20"></script>
-  <script src="assets/js/search.js?v=20"></script>
-  <script src="assets/js/prompt.js?v=20"></script>
-  <script src="assets/js/storage.js?v=20"></script>
-  <script src="assets/js/files.js?v=20"></script>
-  <script src="assets/js/fx.js?v=20"></script>
-  <script src="assets/js/app.js?v=20"></script>
+  <script src="assets/js/keywords.js?v=21"></script>
+  <script src="assets/js/extract.js?v=21"></script>
+  <script src="assets/js/ocr.js?v=21"></script>
+  <script src="assets/js/layout.js?v=21"></script>
+  <script src="assets/js/analyzer.js?v=21"></script>
+  <script src="assets/js/profile.js?v=21"></script>
+  <script src="assets/js/offer.js?v=21"></script>
+  <script src="assets/js/search.js?v=21"></script>
+  <script src="assets/js/prompt.js?v=21"></script>
+  <script src="assets/js/mail.js?v=21"></script>
+  <script src="assets/js/storage.js?v=21"></script>
+  <script src="assets/js/files.js?v=21"></script>
+  <script src="assets/js/fx.js?v=21"></script>
+  <script src="assets/js/app.js?v=21"></script>
 </body>
 </html>

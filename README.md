@@ -32,6 +32,7 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
   - **Réécriture complète** : l'IA réécrit le CV et la lettre en texte structuré.
 
   Dans les deux cas, l'IA n'invente rien et te pose des questions sur les compétences qui manquent. Une option masque ton e-mail et ton téléphone avant le partage.
+- **Mail de candidature** : juste avant d'enregistrer la candidature, un mail prêt à envoyer, écrit à partir de l'offre et du CV. Il reprend l'intitulé et la référence de l'offre, s'adresse à la personne nommée dans l'annonce (« Madame Martin, », « Monsieur le Maire, »), cite le poste actuel et le précédent, les outils demandés que le CV contient, le diplôme récent ou le stage pour un premier emploi, la disponibilité et les coordonnées. Rien n'est inventé : sans information, la phrase n'est pas écrite. Deux tons (classique, direct et chaleureux), d'autres formulations au choix, des tournures neutres (ni « ravi », ni « motivé »). Il s'ouvre dans ta messagerie, dans Gmail ou dans Outlook, ou se copie ; la candidature passe alors au statut « Envoyée ».
 - **Espace personnel** : chacun se connecte avec son e-mail et un mot de passe et retrouve ses propres candidatures. Les candidatures enregistrées avant la création des espaces sont proposées à la récupération lors de la première connexion. Voir [Espaces personnels](#espaces-personnels).
 - **Temps de réflexion** : pendant l'analyse, une fenêtre montre les étapes une à une (lecture, mots-clés, comparaison, contrôles, recommandations) avec les vrais chiffres.
 - **Suivi des candidatures** : sauvegarde de chaque candidature (entreprise, poste, date, statut, notes, scores, fiche de poste, textes envoyés et profil lu par l'ATS), filtres par statut, archives et statistiques.
@@ -70,7 +71,8 @@ Style « néon fun » :
 3. Importe ton CV et, si tu le souhaites, ta lettre de motivation.
 4. Clique sur **Analyser ma candidature**.
 5. Corrige tes documents d'après les recommandations, ou copie le prompt de la rubrique **Perfectionner avec ton IA** dans ton IA générative, puis relance l'analyse.
-6. **Enregistre** la candidature pour la retrouver dans l'onglet *Mes candidatures*.
+6. Relis le **mail de candidature** proposé, ouvre-le dans ta messagerie et joins-y tes documents.
+7. **Enregistre** la candidature pour la retrouver dans l'onglet *Mes candidatures*.
 
 > Clique sur une ligne du tableau des mots-clés pour ignorer un terme sans rapport avec le poste (ex. le nom de la ville).
 
@@ -141,7 +143,7 @@ Le dépôt contient un workflow (`.github/workflows/deploy.yml`) qui publie le s
 ats-tester/
 ├── index.html                 # Page publicitaire (accueil)
 ├── connexion.html             # Écran de lancement + connexion / création d'espace
-├── analyser.html              # Le testeur : analyse, prompt IA, suivi des candidatures
+├── analyser.html              # Le testeur : analyse, prompt IA, mail de candidature, suivi des candidatures
 ├── assets/
 │   ├── css/style.css          # Styles (clair / sombre, responsive)
 │   ├── js/keywords.js         # Dictionnaire de compétences et mots vides (FR / EN)
@@ -151,6 +153,7 @@ ats-tester/
 │   ├── js/offer.js            # Exigences de l'offre et questions éliminatoires
 │   ├── js/search.js           # Recherche booléenne dans les candidatures
 │   ├── js/prompt.js           # Prompt pour une IA générative à partir des résultats
+│   ├── js/mail.js             # Mail de candidature écrit à partir de l'offre et du CV
 │   ├── js/config.js           # Mode des espaces : appareil (vide) ou cloud (Supabase)
 │   ├── js/auth.js             # Comptes et sessions (mot de passe haché ou Supabase)
 │   ├── js/storage.js          # Candidatures de chaque espace, synchronisation, export / import
@@ -199,7 +202,7 @@ Une **question éliminatoire** non remplie passe la candidature à `DISQUALIFIED
 
 ## Tests
 
-Les règles de lecture, de normalisation, de score, de questions éliminatoires et de recherche sont couvertes par des tests unitaires (Jest). Le script `supabase/schema.sql` est exécuté sur un vrai Postgres embarqué (PGlite). Les tests couvrent aussi les cas limites : CV mal formaté, dates manquantes ou incohérentes, caractères spéciaux (ligatures, espaces insécables, emojis), requêtes mal formées. L'analyse de mise en page est testée sur des pages synthétiques : bandeau granuleux, lettres collées aux traits, cases à cocher, lettre « C » à ne pas prendre pour une case, puces, ordre de lecture des colonnes et des tableaux libellé / valeur.
+Les règles de lecture, de normalisation, de score, de questions éliminatoires et de recherche sont couvertes par des tests unitaires (Jest). Le script `supabase/schema.sql` est exécuté sur un vrai Postgres embarqué (PGlite). Les tests couvrent aussi les cas limites : CV mal formaté, dates manquantes ou incohérentes, caractères spéciaux (ligatures, espaces insécables, emojis), requêtes mal formées. Le mail de candidature est vérifié dans toutes ses versions (deux tons, six formulations, avec ou sans lettre, profil confirmé, jeune diplômé, lettre seule) : formulations neutres, aucune tournure toute faite, aucun champ vide. L'analyse de mise en page est testée sur des pages synthétiques : bandeau granuleux, lettres collées aux traits, cases à cocher, lettre « C » à ne pas prendre pour une case, puces, ordre de lecture des colonnes et des tableaux libellé / valeur.
 
 ```bash
 npm install

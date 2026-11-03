@@ -329,6 +329,9 @@
     // Prompt pour une IA générative
     renderPrompt();
 
+    // Mail de candidature
+    renderMail();
+
     // Formulaire d'enregistrement
     if (!$("#save-date").value) $("#save-date").value = new Date().toISOString().slice(0, 10);
     $("#btn-save").textContent = editingId() ? "Mettre à jour la candidature" : "Enregistrer dans Mes candidatures";
@@ -410,6 +413,81 @@
   }
   $("#btn-copy-prompt").addEventListener("click", () => copyPrompt());
   $$("[data-ai]").forEach((a) => a.addEventListener("click", () => copyPrompt(a.textContent)));
+
+  /* ---------- Mail de candidature ---------- */
+  // Écrit à partir de l'offre et du CV. Un texte retouché à la main n'est plus réécrit en silence :
+  // seule une nouvelle offre, un autre CV ou un clic sur « Autre formulation » le remplace.
+  const mail = { variant: 0, edited: false, toEdited: false, key: "", tone: "classic" };
+  function renderMail(force) {
+    const ctx = state.rawCtx, r = state.result;
+    if (!ctx || !r) return;
+    const key = [ctx.jdText, ctx.cv ? ctx.cv.text : "", ctx.letter ? ctx.letter.text : "", $("#title").value, $("#company").value, $("#url").value].join("\u0001");
+    if (key !== mail.key) { mail.key = key; mail.edited = false; }
+    const user = ATS.auth.user();
+    const m = ATS.mail.build(r, {
+      title: $("#title").value, company: $("#company").value, url: $("#url").value, jdText: ctx.jdText,
+      hasLetter: !!ctx.letter, tone: $("#mail-tone").value, variant: mail.variant,
+      fallbackName: user ? ATS.auth.displayName(user) : "", fallbackEmail: user ? user.email : "",
+    });
+    if (force || !mail.edited) { $("#mail-subject").value = m.subject; $("#mail-body").value = m.body; mail.edited = false; }
+    if (!mail.toEdited || !$("#mail-to").value.trim()) { $("#mail-to").value = m.to; mail.toEdited = false; }
+    $("#mail-notes").innerHTML = m.notes.map((n) => '<li class="' + n.level + '">' + esc(n.text) + "</li>").join("");
+    const named = (doc, what) => what + (doc.name && doc.name !== "Texte collé" ? " « " + esc(doc.name) + " »" : "");
+    const docs = [ctx.cv && named(ctx.cv, "ton CV"), ctx.letter && named(ctx.letter, "ta lettre de motivation")].filter(Boolean);
+    $("#mail-attach").innerHTML = "📎 <b>À joindre au mail :</b> " + docs.join(" et ") + ". Ta messagerie ne peut pas les ajouter toute seule.";
+    $("#mail-msg").textContent = "";
+    mailChanged();
+  }
+  function mailParts() {
+    const to = $("#mail-to").value.split(/[,;\s]+/).filter((e) => ATS.profile.isValidEmail(e)).join(",");
+    return { to, subject: $("#mail-subject").value.trim(), body: $("#mail-body").value };
+  }
+  // Liens Gmail et Outlook à jour à chaque frappe, et nombre de mots
+  function mailChanged() {
+    const { to, subject, body } = mailParts(), q = encodeURIComponent;
+    $('[data-webmail="gmail"]').href = "https://mail.google.com/mail/?view=cm&fs=1&to=" + q(to) + "&su=" + q(subject) + "&body=" + q(body);
+    $('[data-webmail="outlook"]').href = "https://outlook.live.com/mail/0/deeplink/compose?to=" + q(to) + "&subject=" + q(subject) + "&body=" + q(body);
+    const n = (body.match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) || []).length;
+    $("#mail-size").textContent = n ? n + " mots" : "";
+  }
+  ["#mail-subject", "#mail-body"].forEach((s) => $(s).addEventListener("input", () => { mail.edited = true; mailChanged(); }));
+  $("#mail-to").addEventListener("input", () => { mail.toEdited = true; mailChanged(); });
+  const keepEdits = () => !mail.edited || confirm("Tu as modifié le message : il sera remplacé par une nouvelle version. Continuer ?");
+  $("#mail-tone").addEventListener("change", () => {
+    if (!keepEdits()) { $("#mail-tone").value = mail.tone; return; }
+    mail.tone = $("#mail-tone").value; renderMail(true);
+  });
+  $("#btn-mail-other").addEventListener("click", () => { if (keepEdits()) { mail.variant++; renderMail(true); } });
+  $("#go-mail").addEventListener("click", () => $("#mail-card").scrollIntoView({ behavior: "smooth", block: "start" }));
+
+  // Mail prêt : la candidature est marquée « Envoyée », avec une note, il ne reste qu'à l'enregistrer
+  function mailReady(msg) {
+    $("#mail-msg").innerHTML = esc(msg) + ' Une fois le mail parti, <a href="#" id="go-save">enregistre ta candidature ↓</a>';
+    $("#go-save").addEventListener("click", (e) => { e.preventDefault(); $(".save-card").scrollIntoView({ behavior: "smooth", block: "start" }); });
+    statusSel.value = "Envoyée";
+    const to = mailParts().to;
+    if (!$("#save-notes").value.trim()) $("#save-notes").value = "Candidature envoyée par e-mail" + (to ? " à " + to : "") + ".";
+  }
+  $("#btn-mail-open").addEventListener("click", () => {
+    const { to, subject, body } = mailParts(), q = encodeURIComponent;
+    const full = "mailto:" + to + "?subject=" + q(subject) + "&body=" + q(body.replace(/\r?\n/g, "\r\n"));
+    // Au-delà d'environ 2 000 caractères, certaines messageries tronquent le lien : le texte passe par le presse-papiers
+    const long = full.length > 1900;
+    const done = (copied) => mailReady(long
+      ? "Ta messagerie s'ouvre avec l'objet. " + (copied ? "Le message est copié : colle-le dans le mail (Ctrl+V)." : "Copie le message ci-dessus et colle-le dans le mail.")
+      : "Ta messagerie s'ouvre avec le mail prêt" + (copied ? " (le texte est aussi copié, au cas où)." : "."));
+    copyText(body).then(() => done(true), () => done(false));
+    location.href = long ? "mailto:" + to + "?subject=" + q(subject) : full;
+  });
+  $("#btn-mail-copy").addEventListener("click", () => {
+    copyText($("#mail-body").value).then(
+      () => mailReady("✓ Message copié. Colle-le dans ta messagerie (Ctrl+V), avec l'objet et tes pièces jointes."),
+      () => { $("#mail-msg").innerHTML = '<span class="error">Copie impossible : le texte est sélectionné, copie-le à la main (Ctrl+C).</span>'; $("#mail-body").select(); });
+  });
+  $$("[data-webmail]").forEach((a) => a.addEventListener("click", () => {
+    mailChanged();
+    mailReady("Le mail s'ouvre dans " + a.textContent + ", prêt à envoyer.");
+  }));
 
   /* ---------- Enregistrement ---------- */
   const statusSel = $("#save-status"), filterSel = $("#filter-status");
@@ -1018,6 +1096,8 @@
     });
     state.result = null; state.ignored = new Set(); state.answers = {}; state.editingId = null;
     $("#results").hidden = true; $("#analyze-error").textContent = ""; $("#save-date").value = ""; statusSel.value = "Envoyée";
+    Object.assign(mail, { variant: 0, edited: false, toEdited: false, key: "" });
+    ["#mail-to", "#mail-subject", "#mail-body"].forEach((s) => ($(s).value = ""));
   }
   $("#btn-reset").addEventListener("click", () => resetForm(false));
   // Nouvelle offre : garde le CV (souvent le même d'une candidature à l'autre), efface le reste
