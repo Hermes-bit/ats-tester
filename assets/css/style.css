@@ -322,6 +322,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--v
 .label { font-weight: 700; font-size: 14px; }
 .field-head, .doc-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 10px; }
 .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+.ocr-status { display: block; color: var(--text); }
+.ocr-bar { display: block; height: 6px; margin-top: 8px; border-radius: 999px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.ocr-bar i { display: block; height: 100%; border-radius: inherit; background: var(--grad); box-shadow: 0 0 10px var(--violet); transition: width .3s ease; }
 
 /* Zones de dépôt */
 .drop { border-radius: 14px; transition: border-color .15s, background .15s, transform .2s; }

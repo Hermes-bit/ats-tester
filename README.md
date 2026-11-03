@@ -16,7 +16,7 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 
 ## Fonctionnalités
 
-- **Import de la fiche de poste** : texte collé, PDF, DOCX, TXT, Markdown, HTML ou RTF.
+- **Import de la fiche de poste** : texte collé, PDF, DOCX, TXT, Markdown, HTML ou RTF, mais aussi **PDF scanné, image (PNG, JPG, WebP) ou capture d'écran collée avec Ctrl+V** : le texte est alors reconnu automatiquement (OCR Tesseract, modèle français), dans le navigateur. Seules les pages sans texte lisible passent par l'OCR.
 - **Import du CV et de la lettre** : PDF, DOCX, TXT…, ou texte collé.
 - **Analyse des mots-clés** : compétences, logiciels, formats de données, méthodes et savoir-être repérés dans l'offre, puis recherchés dans le CV et la lettre. La recherche ignore les accents, les majuscules et les pluriels, et reconnaît les synonymes (ex. *FME Server* = *FME Flow*, *SIG* = *GIS*).
 - **Distinction obligatoire / « un plus »** : les compétences marquées « est un plus » ou « serait appréciée » pèsent moins dans le score.
@@ -154,11 +154,12 @@ ats-tester/
 │   ├── js/auth.js             # Comptes et sessions (mot de passe haché ou Supabase)
 │   ├── js/storage.js          # Candidatures de chaque espace, synchronisation, export / import
 │   ├── js/files.js            # Fichiers d'origine (CV, lettre) gardés dans le navigateur (IndexedDB)
+│   ├── js/ocr.js              # Lecture des fiches de poste scannées ou en image (OCR)
 │   ├── js/login.js            # Écran de lancement et formulaires de connexion
 │   ├── js/app.js              # Interface du testeur
 │   ├── js/fx.js               # Effets : apparitions, compteurs, démo, confettis
 │   ├── img/                   # Logo, favicon, illustrations (WebP, 900 et 1600 px), portrait, icône iPhone, image de partage
-│   └── vendor/                # pdf.js 3.11.174, mammoth 1.8.0 et polices (inclus, sans CDN)
+│   └── vendor/                # pdf.js 3.11.174, mammoth 1.8.0, Tesseract.js 7.0.0 (OCR, chargé à la demande) et polices (inclus, sans CDN)
 ├── supabase/schema.sql        # Table, règles d'accès, vues du schéma ATS et index plein texte
 ├── tests/                     # Tests unitaires Jest (+ PGlite pour le SQL)
 ├── package.json               # Dépendances de test uniquement (le site n'a pas d'étape de compilation)
@@ -218,14 +219,14 @@ Les termes absents du dictionnaire mais répétés dans l'offre sont aussi déte
 ## Limites
 
 - C'est une **simulation** : chaque ATS du marché (Workday, Taleo, SmartRecruiters, Welcome to the Jungle…) a ses propres règles.
-- Un PDF scanné (image) n'est pas lu. L'application le signale, comme le ferait un ATS.
+- Un CV ou une lettre scanné (image) n'est volontairement pas lu par OCR : la plupart des ATS ne le liraient pas non plus, l'application le signale. Seule la fiche de poste peut être scannée. La reconnaissance peut faire quelques erreurs : relis le texte reconnu avant d'analyser.
 - Les fichiers `.doc` (Word 97-2003) et `.odt` ne sont pas lus : convertis-les en `.docx` ou en PDF.
 - En mode appareil, les candidatures restent dans le navigateur (`localStorage`) et ne se synchronisent pas : active le mode cloud ou utilise l'export JSON.
 - N'ajoute à ton CV que des compétences que tu maîtrises vraiment : le recruteur vérifiera en entretien.
 
 ## Technologies
 
-HTML, CSS et JavaScript sans framework ni étape de compilation · Web Crypto (PBKDF2) · [Supabase](https://supabase.com) en option · [pdf.js](https://mozilla.github.io/pdf.js/) (Apache 2.0) · [mammoth.js](https://github.com/mwilliamson/mammoth.js) (BSD-2) · polices [Inter](https://rsms.me/inter/) et [Cormorant Garamond](https://github.com/CatharsisFonts/Cormorant) (SIL OFL 1.1) · GitHub Actions et GitHub Pages.
+HTML, CSS et JavaScript sans framework ni étape de compilation · Web Crypto (PBKDF2) · [Supabase](https://supabase.com) en option · [pdf.js](https://mozilla.github.io/pdf.js/) (Apache 2.0) · [Tesseract.js](https://github.com/naptha/tesseract.js) (Apache 2.0) · [mammoth.js](https://github.com/mwilliamson/mammoth.js) (BSD-2) · polices [Inter](https://rsms.me/inter/) et [Cormorant Garamond](https://github.com/CatharsisFonts/Cormorant) (SIL OFL 1.1) · GitHub Actions et GitHub Pages.
 
 ## Auteur
 

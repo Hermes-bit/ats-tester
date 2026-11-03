@@ -54,16 +54,44 @@
   /* ---------- Fiche de poste ---------- */
   const jd = $("#jd");
   function setJdStatus(html, cls) { $("#jd-status").innerHTML = cls ? '<span class="' + cls + '">' + html + "</span>" : html; }
-  async function importJd(file) {
-    setJdStatus("Lecture de « " + esc(file.name) + " »…");
-    try {
-      const { text } = await ATS.extractFile(file);
-      if (!text.trim()) throw new Error("Aucun texte trouvé dans ce fichier (document scanné ?).");
-      jd.value = text;
-      setJdStatus("✓ Texte importé depuis « " + esc(file.name) + " ». Tu peux le corriger ci-dessus.");
-    } catch (e) { setJdStatus("✗ " + esc(e.message), "error"); }
+  const JD_FORMATS = "Formats acceptés : texte collé, capture d'écran (Ctrl+V), PDF (même scanné), DOCX, image (PNG, JPG), TXT, HTML, RTF.";
+  // Avancement de la reconnaissance de texte (fiche scannée ou en image)
+  function ocrStatus(name, s) {
+    const prep = s.status !== "recognizing text";
+    const pct = prep ? 0 : Math.round(s.progress * 100);
+    const where = s.pages > 1 ? " · page " + s.page + " / " + s.pages : "";
+    return '<span class="ocr-status">🔎 <b>Fiche scannée ou en image :</b> ' + (prep ? "préparation de la lecture automatique…" : "lecture du texte" + where + " · " + pct + " %") +
+      '<span class="ocr-bar"><i style="width:' + (prep ? 4 : Math.max(4, pct)) + '%"></i></span></span>';
   }
-  $("#jd-file").accept = ATS.ACCEPT;
+  function importJd(file) {
+    setJdStatus("Lecture de « " + esc(file.name) + " »…");
+    const run = (async () => {
+      try {
+        const { text, meta } = await ATS.extractFile(file, { ocr: true, onProgress: (s) => setJdStatus(ocrStatus(file.name, s)) });
+        if (!text.trim()) throw new Error("Aucun texte lisible dans « " + file.name + " », même avec la lecture automatique. Colle le texte de l'annonce à la place.");
+        jd.value = text;
+        if (meta.ocr) {
+          setJdStatus("✓ Texte reconnu automatiquement dans « " + esc(file.name) + " »" + (meta.ocrPages && meta.pages > 1 ? " (" + meta.ocrPages + " page" + (meta.ocrPages > 1 ? "s" : "") + " lue" + (meta.ocrPages > 1 ? "s" : "") + " par OCR)" : "") +
+            ". Relis-le et corrige les éventuelles erreurs avant d'analyser." + (meta.confidence < 70 ? ' <span class="error">Lecture difficile (fiabilité ' + meta.confidence + " %) : vérifie bien le texte, ou colle-le depuis l'annonce en ligne.</span>" : ""));
+        } else setJdStatus("✓ Texte importé depuis « " + esc(file.name) + " ». Tu peux le corriger ci-dessus.");
+      } catch (e) { setJdStatus("✗ " + esc(e.message), "error"); }
+    })();
+    // « Analyser » attend la fin de la lecture
+    state.loading.jd = run;
+    run.finally(() => { if (state.loading.jd === run) delete state.loading.jd; });
+    return run;
+  }
+  // Capture d'écran de l'annonce collée dans la zone de texte (Ctrl+V) : lue par OCR
+  jd.addEventListener("paste", (e) => {
+    const cd = e.clipboardData;
+    if (!cd || (cd.getData("text/plain") || "").trim()) return;
+    const item = [...cd.items].find((i) => i.kind === "file" && /^image\//.test(i.type));
+    if (!item) return;
+    e.preventDefault();
+    const f = item.getAsFile();
+    importJd(new File([f], "capture d'écran." + ((f.type.split("/")[1] || "png").replace("jpeg", "jpg")), { type: f.type }));
+  });
+  $("#jd-file").accept = ATS.ACCEPT_JD;
   $("#jd-file").addEventListener("change", (e) => { if (e.target.files[0]) importJd(e.target.files[0]); e.target.value = ""; });
   dropTarget($("#jd-drop"), importJd);
 
@@ -983,7 +1011,7 @@
   /* ---------- Réinitialiser ---------- */
   function resetForm(keepCv) {
     ["#company", "#title", "#url", "#save-notes"].forEach((s) => ($(s).value = ""));
-    jd.value = ""; setJdStatus("Formats acceptés : texte collé, PDF, DOCX, TXT, MD, HTML, RTF.");
+    jd.value = ""; setJdStatus(JD_FORMATS);
     (keepCv ? ["letter"] : ["cv", "letter"]).forEach((k) => {
       state.docs[k] = null; $("#paste-" + k).value = ""; togglePaste(k, false);
     });
