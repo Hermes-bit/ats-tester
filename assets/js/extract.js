@@ -55,23 +55,123 @@ window.ATS = window.ATS || {};
     return { canvas, ctx, vp };
   }
 
-  // Lecture par OCR d'une toile (page scannée, image) : case par case si la page est un tableau
-  function ocrLayout(canvas, page, pages, onProgress) {
-    return ATS.layout.ocrCanvas(canvas, ATS.ocr.recognizeLines, (progress, status) => onProgress && onProgress({ page, pages, progress, status: status || "recognizing text" }));
+  // Toile que le navigateur n'a pas pu créer (mémoire saturée) : elle reste transparente malgré le fond blanc
+  function canvasLost(ctx, w, h) {
+    try {
+      for (const fy of [0.2, 0.5, 0.8]) for (const fx of [0.2, 0.5, 0.8]) if (ctx.getImageData(Math.floor(w * fx), Math.floor(h * fy), 1, 1).data[3] !== 0) return false;
+    } catch (e) { /* lecture refusée : toile inutilisable */ }
+    return true;
   }
 
-  // Page PDF scannée : dessinée à ≈ 2 400 px de large, puis lue par OCR
-  async function ocrPdfPage(page, n, total, onProgress) {
-    const { canvas, ctx, vp } = pageCanvas(page, 2400, 20e6);
-    await page.render({ canvasContext: ctx, viewport: vp }).promise;
-    try { return await ocrLayout(canvas, n, total, onProgress); } finally { canvas.width = canvas.height = 0; }
+  // Page PDF dessinée à la largeur demandée, ou null si le navigateur n'y arrive pas (mémoire saturée).
+  // intent « print » : rendu d'une traite, sans requestAnimationFrame, qui se met en pause quand l'onglet est caché
+  async function drawPage(page, width, maxPixels) {
+    let c = null;
+    try {
+      c = pageCanvas(page, width, maxPixels);
+      await page.render({ canvasContext: c.ctx, viewport: c.vp, intent: "print" }).promise;
+      if (!canvasLost(c.ctx, c.canvas.width, c.canvas.height)) return c;
+    } catch (e) { /* toile refusée ou rendu impossible à cette taille */ }
+    if (c) c.canvas.width = c.canvas.height = 0;
+    return null;
+  }
+
+  // Image (capture d'écran, photo) agrandie ou réduite d'un facteur k, ou null si le navigateur n'y arrive pas
+  function drawBitmap(bmp, k) {
+    let c = null;
+    try {
+      c = document.createElement("canvas");
+      c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      const ctx = c.getContext("2d", { willReadFrequently: true });
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(bmp, 0, 0, c.width, c.height);
+      if (!canvasLost(ctx, c.width, c.height)) return c;
+    } catch (e) { /* toile refusée à cette taille */ }
+    if (c) c.width = c.height = 0;
+    return null;
+  }
+
+  const ENOUGH = 25; // lettres : en dessous, la page est relue autrement
+  const better = (a, b) => (b && (!a || letters(b.text) > letters(a.text)) ? b : a);
+
+  /**
+   * Lecture d'une page scannée ou d'une image, avec solutions de secours successives :
+   * 1. page dessinée en grand, puis plus petit si le navigateur refuse (mémoire saturée) ;
+   * 2. lecture case par case (layout.js), puis page entière d'un seul tenant si presque rien n'est reconnu ;
+   * 3. image d'origine (JPEG du PDF, fichier image) donnée directement au moteur OCR, sans toile.
+   * Une panne du moteur lui-même (e.engine) arrête tout : réessayer ne servirait à rien.
+   * @param steps { sizes, draw(taille) → toile | null, layout(toile), plain(toile), free(toile), raw() → résultat | null }
+   * @returns { text, confidence, regions, drawn }
+   */
+  async function readScan(steps) {
+    let best = null, drawn = false;
+    for (const size of steps.sizes) {
+      const c = await steps.draw(size);
+      if (!c) continue;
+      drawn = true;
+      try {
+        best = better(best, await steps.layout(c));
+        if (letters(best.text) < ENOUGH) best = better(best, await steps.plain(c));
+        break;
+      } catch (e) {
+        if (e && e.engine) throw e;
+        // mémoire insuffisante pour l'analyse à cette taille : page redessinée plus petite
+      } finally { steps.free(c); }
+    }
+    if ((!best || letters(best.text) < ENOUGH) && steps.raw) {
+      try { best = better(best, await steps.raw()); } catch (e) { if (e && e.engine) throw e; }
+    }
+    return Object.assign({ text: "", confidence: 0, regions: 0 }, best, { drawn });
+  }
+
+  /**
+   * Images JPEG des pages d'un PDF scanné, dans l'ordre du fichier, pour les lire sans les dessiner.
+   * Seulement quand il y a exactement une grande image JPEG par page ; sinon [].
+   */
+  function pdfJpegs(u8, pages) {
+    let s = "";
+    for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    const found = [], re = /\/Subtype\s*\/Image\b/g;
+    let m;
+    while ((m = re.exec(s))) {
+      const from = s.lastIndexOf("obj", m.index), st = s.indexOf("stream", m.index);
+      if (from < 0 || st < 0) break;
+      const end = s.indexOf("endstream", st);
+      if (end < 0) break;
+      re.lastIndex = end;
+      const dict = s.slice(from, st);
+      if (dict.includes("endobj") || !/\/DCTDecode\b/.test(dict) || /\/(?:Flate|LZW|ASCII85|ASCIIHex|RunLength)Decode\b/.test(dict)) continue;
+      let i = st + 6;
+      if (s[i] === "\r") i++;
+      if (s[i] === "\n") i++;
+      if (u8[i] !== 0xff || u8[i + 1] !== 0xd8) continue;
+      const num = (k) => Number((new RegExp("/" + k + "\\s+(\\d+)").exec(dict) || [])[1]) || 0;
+      if (num("Width") * num("Height") < 4e5) continue; // logo, tampon : pas une page
+      found.push(u8.subarray(i, end));
+    }
+    return found.length === pages ? found : [];
+  }
+
+  // Page PDF scannée : dessinée à ≈ 2 400 px de large (moins si la mémoire manque), puis lue par OCR
+  function ocrPdfPage(page, n, total, onProgress, jpeg) {
+    const report = (progress, status) => onProgress && onProgress({ page: n, pages: total, progress, status: status || "recognizing text" });
+    return readScan({
+      sizes: [2400, 1700, 1200],
+      draw: (width) => drawPage(page, width, 20e6),
+      layout: (c) => ATS.layout.ocrCanvas(c.canvas, ATS.ocr.recognizeLines, report),
+      plain: (c) => ATS.ocr.recognize(c.canvas, report),
+      free: (c) => { c.canvas.width = c.canvas.height = 0; },
+      raw: async () => { const img = await jpeg(n); return img ? ATS.ocr.recognize(new Blob([img], { type: "image/jpeg" }), report) : null; },
+    });
   }
 
   // Page PDF texte : si elle contient un tableau, le texte est remis dans l'ordre des cases
   async function orderTablePage(page, content) {
-    const { canvas, ctx, vp } = pageCanvas(page, 1400, 6e6);
+    const c = await drawPage(page, 1400, 6e6);
+    if (!c) return null;
+    const { canvas, vp } = c;
     try {
-      await page.render({ canvasContext: ctx, viewport: vp }).promise;
       const items = content.items.filter((it) => it.str !== undefined).map((it) => {
         const [x, y] = vp.convertToViewportPoint(it.transform[4], it.transform[5]);
         const hgt = Math.max(4, Math.hypot(it.transform[2], it.transform[3]) * vp.scale);
@@ -95,34 +195,47 @@ window.ATS = window.ATS || {};
     let text = "";
     let images = 0;
     const ocr = { pages: 0, confidence: [] };
-    let tables = 0;
-    for (let p = 1; p <= pdf.numPages; p++) {
-      const page = await pdf.getPage(p);
-      const content = await page.getTextContent();
-      let pageText = "";
-      for (const item of content.items) {
-        pageText += item.str;
-        pageText += item.hasEOL ? "\n" : (item.str && !/\s$/.test(item.str) ? " " : "");
-      }
-      if (opts.ocr && ATS.ocr && ATS.layout && unreadable(pageText)) {
-        const r = await ocrPdfPage(page, p, pdf.numPages, opts.onProgress);
-        if (letters(r.text) > letters(pageText)) { pageText = r.text; ocr.pages++; ocr.confidence.push(r.confidence); if (r.regions >= 3) tables++; }
-      } else if (opts.ocr && ATS.layout) {
-        const ordered = await orderTablePage(page, content);
-        if (ordered && letters(ordered) >= letters(pageText) * 0.9) { pageText = ordered; tables++; }
-      }
-      text += pageText + "\n\n";
-      // Comptage des images (contrôle « mise en page simple » du CV) : inutile pour la fiche de poste,
-      // et coûteux sur un scan (l'image serait décodée une seconde fois)
-      if (!opts.ocr) try {
-        const ops = await page.getOperatorList();
-        for (const fn of ops.fnArray) {
-          if (fn === pdfjsLib.OPS.paintImageXObject || fn === pdfjsLib.OPS.paintJpegXObject) images++;
+    const pages = pdf.numPages; // encore lisible après pdf.destroy()
+    let tables = 0, unrendered = 0;
+    // Images JPEG des pages : cherchées dans le fichier seulement si une page scannée ne peut pas être dessinée
+    let jpegs = null;
+    const jpeg = async (n) => {
+      if (!jpegs) try { jpegs = pdfJpegs(new Uint8Array(await readAsArrayBuffer(file)), pdf.numPages); } catch (e) { jpegs = []; }
+      return jpegs[n - 1] || null;
+    };
+    try {
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        let pageText = "";
+        for (const item of content.items) {
+          pageText += item.str;
+          pageText += item.hasEOL ? "\n" : (item.str && !/\s$/.test(item.str) ? " " : "");
         }
-      } catch (e) { /* comptage d'images facultatif */ }
-    }
+        if (opts.ocr && unreadable(pageText)) {
+          if (!ATS.ocr || !ATS.layout) throw new Error("Le module de lecture automatique n'est pas chargé. Recharge la page (Ctrl+F5) puis réessaie, ou colle le texte de l'annonce.");
+          ATS.ocr.check();
+          const r = await ocrPdfPage(page, p, pdf.numPages, opts.onProgress, jpeg);
+          if (!r.drawn && !letters(r.text)) unrendered++;
+          if (letters(r.text) > letters(pageText)) { pageText = r.text; ocr.pages++; ocr.confidence.push(r.confidence); if (r.regions >= 3) tables++; }
+        } else if (opts.ocr && ATS.layout) {
+          const ordered = await orderTablePage(page, content);
+          if (ordered && letters(ordered) >= letters(pageText) * 0.9) { pageText = ordered; tables++; }
+        }
+        text += pageText + "\n\n";
+        // Comptage des images (contrôle « mise en page simple » du CV) : inutile pour la fiche de poste,
+        // et coûteux sur un scan (l'image serait décodée une seconde fois)
+        if (!opts.ocr) try {
+          const ops = await page.getOperatorList();
+          for (const fn of ops.fnArray) {
+            if (fn === pdfjsLib.OPS.paintImageXObject || fn === pdfjsLib.OPS.paintJpegXObject) images++;
+          }
+        } catch (e) { /* comptage d'images facultatif */ }
+        page.cleanup(); // images décodées libérées au fil des pages
+      }
+    } finally { Promise.resolve(pdf.destroy()).catch(() => {}); }
     text = text.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").replace(/[ \t]{2,}/g, " ").trim();
-    const meta = { type: "pdf", pages: pdf.numPages, images, tables: opts.ocr ? tables : null };
+    const meta = { type: "pdf", pages, images, tables: opts.ocr ? tables : null, unrendered };
     if (ocr.pages) Object.assign(meta, { ocr: true, ocrPages: ocr.pages, confidence: Math.round(ocr.confidence.reduce((a, b) => a + b, 0) / ocr.confidence.length) });
     return { text, meta };
   }
@@ -130,23 +243,27 @@ window.ATS = window.ATS || {};
   // Image (capture d'écran, photo) : mise à ≈ 2 400 px de large pour que les lettres soient assez grandes
   async function fromImage(file, opts) {
     if (!ATS.ocr || !ATS.layout) throw new Error("La reconnaissance de texte n'est pas disponible sur cette page.");
-    let bmp;
-    try { bmp = await createImageBitmap(file); } catch (e) {
-      throw new Error("Cette image n'a pas pu être ouverte. Formats d'image acceptés : PNG, JPG, WebP, BMP.");
+    ATS.ocr.check();
+    let bmp = null;
+    try { bmp = await createImageBitmap(file); } catch (e) { /* image que le navigateur n'ouvre pas : lue directement par le moteur */ }
+    let k = 1;
+    if (bmp) {
+      k = bmp.width < 1600 ? Math.min(2.5, 2400 / bmp.width) : bmp.width > 3200 ? 2400 / bmp.width : 1;
+      if (bmp.width * bmp.height * k * k > 20e6) k = Math.sqrt(20e6 / (bmp.width * bmp.height));
     }
-    let k = bmp.width < 1600 ? Math.min(2.5, 2400 / bmp.width) : bmp.width > 3200 ? 2400 / bmp.width : 1;
-    if (bmp.width * bmp.height * k * k > 20e6) k = Math.sqrt(20e6 / (bmp.width * bmp.height));
-    const c = document.createElement("canvas");
-    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
-    const ctx = c.getContext("2d", { willReadFrequently: true });
-    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(bmp, 0, 0, c.width, c.height);
-    bmp.close();
+    const report = (progress, status) => opts.onProgress && opts.onProgress({ page: 1, pages: 1, progress, status: status || "recognizing text" });
     try {
-      const r = await ocrLayout(c, 1, 1, opts.onProgress);
-      return { text: r.text, meta: { type: "image", pages: 1, images: 1, tables: r.regions >= 3 ? 1 : 0, ocr: true, ocrPages: 1, confidence: r.confidence } };
-    } finally { c.width = c.height = 0; }
+      const r = await readScan({
+        sizes: bmp ? [k, k * 0.7, k * 0.5] : [],
+        draw: (s) => drawBitmap(bmp, s),
+        layout: (c) => ATS.layout.ocrCanvas(c, ATS.ocr.recognizeLines, report),
+        plain: (c) => ATS.ocr.recognize(c, report),
+        free: (c) => { c.width = c.height = 0; },
+        raw: () => ATS.ocr.recognize(file, report),
+      });
+      if (!bmp && !letters(r.text)) throw new Error("Cette image n'a pas pu être ouverte. Formats d'image acceptés : PNG, JPG, WebP, BMP.");
+      return { text: r.text, meta: { type: "image", pages: 1, images: 1, tables: r.regions >= 3 ? 1 : 0, ocr: true, ocrPages: 1, confidence: r.confidence, unrendered: r.drawn || letters(r.text) ? 0 : 1 } };
+    } finally { if (bmp) bmp.close(); }
   }
   const IMAGE_EXT = ["png", "jpg", "jpeg", "webp", "bmp"];
 
@@ -292,6 +409,8 @@ window.ATS = window.ATS || {};
     }
     throw new Error("Format non pris en charge (" + (e || file.type || "inconnu") + "). Formats acceptés : PDF, DOCX, ODT, TXT, MD, HTML, RTF" + (opts.ocr ? ", PNG, JPG, WebP." : "."));
   };
+
+  ATS.extract = { readScan, pdfJpegs };
 
   ATS.ACCEPT = ".pdf,.docx,.odt,.txt,.md,.html,.htm,.rtf";
   // Fiche de poste : les images (captures d'écran, photos) sont aussi acceptées, lues par OCR

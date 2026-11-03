@@ -10,7 +10,15 @@ window.ATS = window.ATS || {};
   // Petit module WebAssembly de test : valide seulement si le processeur gère les instructions SIMD
   const SIMD_TEST = new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]);
   const IDLE_MS = 90000; // le moteur est libéré après 1 min 30 sans lecture
-  let libPromise = null, workerPromise = null, idleTimer = null, listener = null;
+  const STALL_MS = 90000; // moteur sans signe de vie (chargement, progression) pendant 1 min 30 : lecture abandonnée
+  let libPromise = null, workerPromise = null, idleTimer = null, listener = null, lastBeat = 0;
+
+  // Panne du moteur lui-même (chargement, WebAssembly, blocage) : inutile de réessayer sur une autre image
+  function engineError(message) {
+    const e = new Error(message);
+    e.engine = true;
+    return e;
+  }
 
   function simd() {
     try { return typeof WebAssembly === "object" && WebAssembly.validate(SIMD_TEST); } catch (e) { return false; }
@@ -22,16 +30,23 @@ window.ATS = window.ATS || {};
       libPromise = new Promise((resolve, reject) => {
         const s = document.createElement("script");
         s.src = BASE + "tesseract.min.js?v=7.0.0";
-        s.onload = () => (window.Tesseract ? resolve(window.Tesseract) : reject(new Error("Module de reconnaissance de texte indisponible.")));
-        s.onerror = () => { libPromise = null; s.remove(); reject(new Error("Impossible de charger le module de reconnaissance de texte. Vérifie ta connexion puis réessaie.")); };
+        s.onload = () => (window.Tesseract ? resolve(window.Tesseract) : reject(engineError("Module de reconnaissance de texte indisponible.")));
+        s.onerror = () => { libPromise = null; s.remove(); reject(engineError("Impossible de charger le module de reconnaissance de texte. Vérifie ta connexion puis réessaie.")); };
         document.head.appendChild(s);
       });
     }
     return libPromise;
   }
 
+  // Moteur qui ne pourra pas démarrer : erreur levée tout de suite, avant d'analyser la page pour rien.
+  // Sans WebAssembly (« sécurité renforcée » d'Edge, politique d'entreprise), il ne démarrerait jamais.
+  function check() {
+    if (typeof WebAssembly !== "object") throw engineError("La lecture automatique a besoin de WebAssembly, bloqué dans ce navigateur (par exemple par la « sécurité renforcée » d'Edge). Autorise ce site dans les paramètres du navigateur, ou colle le texte de l'annonce.");
+  }
+
   function getWorker() {
     clearTimeout(idleTimer);
+    try { check(); } catch (e) { return Promise.reject(e); }
     if (!workerPromise) {
       workerPromise = loadLib()
         .then((T) => T.createWorker("fra", 1, {
@@ -39,11 +54,31 @@ window.ATS = window.ATS || {};
           // Variante du moteur choisie ici : seules les versions SIMD et standard sont hébergées
           corePath: BASE + (simd() ? "tesseract-core-simd-lstm.wasm.js" : "tesseract-core-lstm.wasm.js"),
           langPath: BASE + "lang",
-          logger: (m) => { if (listener) listener(m); },
+          logger: (m) => { lastBeat = Date.now(); if (listener) listener(m); },
         }))
-        .catch((e) => { workerPromise = null; throw e instanceof Error ? e : new Error(String(e)); });
+        .catch((e) => {
+          workerPromise = null;
+          throw e && e.engine ? e : engineError("Le moteur de lecture automatique n'a pas pu démarrer (" + ((e && e.message) || e) + "). Recharge la page puis réessaie, ou colle le texte de l'annonce.");
+        });
     }
     return workerPromise;
+  }
+
+  // Le moteur donne signe de vie à chaque étape ; s'il se tait trop longtemps, il est arrêté
+  function watch(task) {
+    lastBeat = Date.now();
+    let timer;
+    const stalled = new Promise((resolve, reject) => {
+      const check = () => {
+        if (Date.now() - lastBeat < STALL_MS) { timer = setTimeout(check, 5000); return; }
+        const p = workerPromise;
+        workerPromise = null;
+        if (p) p.then((w) => w.terminate()).catch(() => {});
+        reject(engineError("La lecture automatique ne répond plus. Recharge la page puis réessaie, ou colle le texte de l'annonce."));
+      };
+      timer = setTimeout(check, 5000);
+    });
+    return Promise.race([task, stalled]).finally(() => clearTimeout(timer));
   }
 
   function releaseLater() {
@@ -82,10 +117,13 @@ window.ATS = window.ATS || {};
   async function recognize(image, onProgress) {
     listener = (m) => { if (onProgress) onProgress(typeof m.progress === "number" ? m.progress : 0, m.status || ""); };
     try {
-      const worker = await getWorker();
-      await worker.setParameters({ tessedit_pageseg_mode: "3" }); // après recognizeLines, qui change le découpage
-      const { data } = await worker.recognize(image);
-      return { text: tidy(data.text), confidence: Math.round(data.confidence || 0) };
+      return await watch((async () => {
+        const worker = await getWorker();
+        // Réglages par défaut, que recognizeLines change : découpage automatique, résolution estimée, texte inversé détecté
+        await worker.setParameters({ tessedit_pageseg_mode: "3", user_defined_dpi: "0", tessedit_do_invert: "1" });
+        const { data } = await worker.recognize(image);
+        return { text: tidy(data.text), confidence: Math.round(data.confidence || 0) };
+      })());
     } finally {
       listener = null;
       releaseLater();
@@ -100,10 +138,10 @@ window.ATS = window.ATS || {};
   async function recognizeLines(image, psm, onProgress) {
     listener = (m) => { if (onProgress) onProgress(typeof m.progress === "number" ? m.progress : 0, m.status || ""); };
     try {
-      const worker = await getWorker();
+      const worker = await watch(getWorker());
       // Résolution connue (≈ 300 ppp) et texte inversé déjà traité : deux étapes coûteuses évitées
       await worker.setParameters({ tessedit_pageseg_mode: psm || "3", user_defined_dpi: "300", tessedit_do_invert: "0" });
-      const { data } = await worker.recognize(image, {}, { text: true, blocks: true });
+      const { data } = await watch(worker.recognize(image, {}, { text: true, blocks: true }));
       const lines = [];
       let paragraph = 0;
       for (const b of data.blocks || []) for (const p of b.paragraphs || []) {
@@ -119,5 +157,5 @@ window.ATS = window.ATS || {};
     }
   }
 
-  ATS.ocr = { recognize, recognizeLines, tidy, simd };
+  ATS.ocr = { recognize, recognizeLines, tidy, simd, check };
 })();

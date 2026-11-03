@@ -69,7 +69,9 @@
     const run = (async () => {
       try {
         const { text, meta } = await ATS.extractFile(file, { ocr: true, onProgress: (s) => setJdStatus(ocrStatus(file.name, s)) });
-        if (!text.trim()) throw new Error("Aucun texte lisible dans « " + file.name + " », même avec la lecture automatique. Colle le texte de l'annonce à la place.");
+        if (!text.trim()) throw new Error(meta.unrendered
+          ? "Ton navigateur n'a pas réussi à afficher « " + file.name + " » pour le lire (mémoire saturée ?). Ferme quelques onglets ou applications puis réessaie, ou colle le texte de l'annonce."
+          : "Aucun texte reconnu dans « " + file.name + " », même avec la lecture automatique : le document semble vide ou trop flou. Colle le texte de l'annonce à la place.");
         jd.value = text;
         if (meta.ocr) {
           setJdStatus("✓ Texte reconnu automatiquement dans « " + esc(file.name) + " »" + (meta.ocrPages && meta.pages > 1 ? " (" + meta.ocrPages + " page" + (meta.ocrPages > 1 ? "s" : "") + " lue" + (meta.ocrPages > 1 ? "s" : "") + " par OCR)" : "") +
