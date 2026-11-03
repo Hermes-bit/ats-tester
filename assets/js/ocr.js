@@ -58,7 +58,8 @@ window.ATS = window.ATS || {};
   // Lignes coupées par la mise en page : recollées quand la phrase continue
   function tidy(text) {
     const lines = String(text || "").replace(/\r/g, "").split("\n").map((l) => l.replace(/[ \t ]+/g, " ").trim()
-      .replace(/^[»«•·*▪●◦‣>©®✓✔]\s+/, "• ")); // puces lues comme « », •, © … : uniformisées
+      // Puces lues comme « e », « o », « s », « + », « » », « © »… devant une majuscule : uniformisées
+      .replace(/^[»«•·*▪●◦‣>©®✓✔]\s+/, "• ").replace(/^(?:[eosc°+]|\(e\))\s+(?=[\p{Lu}\d«"(])/u, "• "));
     const out = [];
     for (const line of lines) {
       if (!line) { if (out.length && out[out.length - 1] !== "") out.push(""); continue; }
@@ -82,6 +83,7 @@ window.ATS = window.ATS || {};
     listener = (m) => { if (onProgress) onProgress(typeof m.progress === "number" ? m.progress : 0, m.status || ""); };
     try {
       const worker = await getWorker();
+      await worker.setParameters({ tessedit_pageseg_mode: "3" }); // après recognizeLines, qui change le découpage
       const { data } = await worker.recognize(image);
       return { text: tidy(data.text), confidence: Math.round(data.confidence || 0) };
     } finally {
@@ -90,5 +92,32 @@ window.ATS = window.ATS || {};
     }
   }
 
-  ATS.ocr = { recognize, tidy, simd };
+  /**
+   * Lecture détaillée d'une zone : lignes avec position et confiance de chaque mot (pour layout.js).
+   * @param psm         mode de découpage Tesseract : "3" automatique (colonnes), "6" bloc de texte uniforme
+   * @param onProgress  fonction(progression 0..1, étape)
+   */
+  async function recognizeLines(image, psm, onProgress) {
+    listener = (m) => { if (onProgress) onProgress(typeof m.progress === "number" ? m.progress : 0, m.status || ""); };
+    try {
+      const worker = await getWorker();
+      // Résolution connue (≈ 300 ppp) et texte inversé déjà traité : deux étapes coûteuses évitées
+      await worker.setParameters({ tessedit_pageseg_mode: psm || "3", user_defined_dpi: "300", tessedit_do_invert: "0" });
+      const { data } = await worker.recognize(image, {}, { text: true, blocks: true });
+      const lines = [];
+      let paragraph = 0;
+      for (const b of data.blocks || []) for (const p of b.paragraphs || []) {
+        paragraph++;
+        for (const l of p.lines || []) {
+          lines.push({ text: String(l.text || "").trim(), confidence: l.confidence, bbox: l.bbox, paragraph, words: (l.words || []).map((wd) => ({ text: wd.text, confidence: wd.confidence, bbox: wd.bbox })) });
+        }
+      }
+      return { lines, text: data.text || "", confidence: data.confidence || 0 };
+    } finally {
+      listener = null;
+      releaseLater();
+    }
+  }
+
+  ATS.ocr = { recognize, recognizeLines, tidy, simd };
 })();

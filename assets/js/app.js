@@ -54,9 +54,10 @@
   /* ---------- Fiche de poste ---------- */
   const jd = $("#jd");
   function setJdStatus(html, cls) { $("#jd-status").innerHTML = cls ? '<span class="' + cls + '">' + html + "</span>" : html; }
-  const JD_FORMATS = "Formats acceptés : texte collé, capture d'écran (Ctrl+V), PDF (même scanné), DOCX, image (PNG, JPG), TXT, HTML, RTF.";
+  const JD_FORMATS = "Formats acceptés : texte collé, capture d'écran (Ctrl+V), PDF (même scanné ou en tableau), Word (DOCX), OpenDocument (ODT), image (PNG, JPG), HTML, TXT, RTF.";
   // Avancement de la reconnaissance de texte (fiche scannée ou en image)
   function ocrStatus(name, s) {
+    if (s.status === "layout") return '<span class="ocr-status">🔎 <b>Fiche scannée ou en image :</b> analyse de la mise en page (colonnes, tableaux)' + (s.pages > 1 ? " · page " + s.page + " / " + s.pages : "") + '…<span class="ocr-bar"><i style="width:4%"></i></span></span>';
     const prep = s.status !== "recognizing text";
     const pct = prep ? 0 : Math.round(s.progress * 100);
     const where = s.pages > 1 ? " · page " + s.page + " / " + s.pages : "";

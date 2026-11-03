@@ -16,8 +16,9 @@ La plupart des entreprises trient les candidatures avec un ATS (*Applicant Track
 
 ## Fonctionnalités
 
-- **Import de la fiche de poste** : texte collé, PDF, DOCX, TXT, Markdown, HTML ou RTF, mais aussi **PDF scanné, image (PNG, JPG, WebP) ou capture d'écran collée avec Ctrl+V** : le texte est alors reconnu automatiquement (OCR Tesseract, modèle français), dans le navigateur. Seules les pages sans texte lisible passent par l'OCR.
-- **Import du CV et de la lettre** : PDF, DOCX, TXT…, ou texte collé.
+- **Import de la fiche de poste** : texte collé, PDF, Word (DOCX), OpenDocument (ODT), TXT, Markdown, HTML ou RTF, mais aussi **PDF scanné, image (PNG, JPG, WebP) ou capture d'écran collée avec Ctrl+V** : le texte est alors reconnu automatiquement (OCR Tesseract, modèle français), dans le navigateur. Seules les pages sans texte lisible passent par l'OCR.
+- **Fiches de poste en tableau** (colonnes, bandeaux de titre colorés, cases à cocher) : les traits du tableau sont repérés, chaque case est lue séparément puis remise dans l'ordre de lecture. Les colonnes ne se mélangent plus : « MISSIONS » puis son contenu, « CONDITIONS » puis le sien ; un tableau libellé / valeur devient « Diplômes : Bac + 3… ». Les puces mal lues et les lignes coupées sont recollées. Cela vaut pour les scans, les PDF texte, les tableaux Word, OpenDocument et HTML.
+- **Import du CV et de la lettre** : PDF, DOCX, ODT, TXT…, ou texte collé. Ils sont lus tels quels, dans l'ordre brut du fichier, comme le ferait un ATS : un CV en colonnes ou en tableau qui se mélange à la lecture est un vrai risque, et l'application le montre.
 - **Analyse des mots-clés** : compétences, logiciels, formats de données, méthodes et savoir-être repérés dans l'offre, puis recherchés dans le CV et la lettre. La recherche ignore les accents, les majuscules et les pluriels, et reconnaît les synonymes (ex. *FME Server* = *FME Flow*, *SIG* = *GIS*).
 - **Distinction obligatoire / « un plus »** : les compétences marquées « est un plus » ou « serait appréciée » pèsent moins dans le score.
 - **Vérifications ATS** : texte lisible (PDF scanné ?), coordonnées, rubriques standards, intitulé du poste, longueur, dates, tableaux et images, **ligatures typographiques** (« Shapeﬁle » lu « Shape fi le »), lettres isolées.
@@ -155,6 +156,7 @@ ats-tester/
 │   ├── js/storage.js          # Candidatures de chaque espace, synchronisation, export / import
 │   ├── js/files.js            # Fichiers d'origine (CV, lettre) gardés dans le navigateur (IndexedDB)
 │   ├── js/ocr.js              # Lecture des fiches de poste scannées ou en image (OCR)
+│   ├── js/layout.js           # Mise en page : traits, cases d'un tableau, ordre de lecture
 │   ├── js/login.js            # Écran de lancement et formulaires de connexion
 │   ├── js/app.js              # Interface du testeur
 │   ├── js/fx.js               # Effets : apparitions, compteurs, démo, confettis
@@ -197,7 +199,7 @@ Une **question éliminatoire** non remplie passe la candidature à `DISQUALIFIED
 
 ## Tests
 
-Les règles de lecture, de normalisation, de score, de questions éliminatoires et de recherche sont couvertes par des tests unitaires (Jest). Le script `supabase/schema.sql` est exécuté sur un vrai Postgres embarqué (PGlite). Les tests couvrent aussi les cas limites : CV mal formaté, dates manquantes ou incohérentes, caractères spéciaux (ligatures, espaces insécables, emojis), requêtes mal formées.
+Les règles de lecture, de normalisation, de score, de questions éliminatoires et de recherche sont couvertes par des tests unitaires (Jest). Le script `supabase/schema.sql` est exécuté sur un vrai Postgres embarqué (PGlite). Les tests couvrent aussi les cas limites : CV mal formaté, dates manquantes ou incohérentes, caractères spéciaux (ligatures, espaces insécables, emojis), requêtes mal formées. L'analyse de mise en page est testée sur des pages synthétiques : bandeau granuleux, lettres collées aux traits, cases à cocher, lettre « C » à ne pas prendre pour une case, puces, ordre de lecture des colonnes et des tableaux libellé / valeur.
 
 ```bash
 npm install
@@ -220,7 +222,8 @@ Les termes absents du dictionnaire mais répétés dans l'offre sont aussi déte
 
 - C'est une **simulation** : chaque ATS du marché (Workday, Taleo, SmartRecruiters, Welcome to the Jungle…) a ses propres règles.
 - Un CV ou une lettre scanné (image) n'est volontairement pas lu par OCR : la plupart des ATS ne le liraient pas non plus, l'application le signale. Seule la fiche de poste peut être scannée. La reconnaissance peut faire quelques erreurs : relis le texte reconnu avant d'analyser.
-- Les fichiers `.doc` (Word 97-2003) et `.odt` ne sont pas lus : convertis-les en `.docx` ou en PDF.
+- Les fichiers `.doc` (Word 97-2003) ne sont pas lus : convertis-les en `.docx` ou en PDF.
+- La lecture d'une fiche scannée se fait sur ton appareil : compte une dizaine de secondes pour deux pages denses sur un ordinateur récent, davantage sur un téléphone.
 - En mode appareil, les candidatures restent dans le navigateur (`localStorage`) et ne se synchronisent pas : active le mode cloud ou utilise l'export JSON.
 - N'ajoute à ton CV que des compétences que tu maîtrises vraiment : le recruteur vérifiera en entretien.
 
